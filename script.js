@@ -479,9 +479,33 @@ function exportToPDF() {
         return;
     }
     
+    // Detect current tab to check for custom font
+    const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+    const currentFont = customFonts[activeTab];
+    
     // Create a new window with clean content for PDF export
     const printWindow = window.open('', '_blank');
     const htmlContent = outputElement.innerHTML;
+    
+    // Generate custom font CSS if a custom font is being used
+    let customFontCSS = '';
+    if (currentFont && outputElement.classList.contains('font-custom')) {
+        // Convert ArrayBuffer to base64
+        const base64Font = btoa(String.fromCharCode(...new Uint8Array(currentFont.data)));
+        const fontFormat = currentFont.name.toLowerCase().endsWith('.woff2') ? 'woff2' : 
+                          currentFont.name.toLowerCase().endsWith('.woff') ? 'woff' : 
+                          currentFont.name.toLowerCase().endsWith('.ttf') ? 'truetype' : 'opentype';
+        
+        customFontCSS = `
+            @font-face {
+                font-family: '${currentFont.family}';
+                src: url(data:font/${fontFormat};base64,${base64Font});
+            }
+            .font-custom, .content {
+                font-family: '${currentFont.family}', monospace !important;
+            }
+        `;
+    }
     
     printWindow.document.write(`
         <!DOCTYPE html>
@@ -489,6 +513,8 @@ function exportToPDF() {
         <head>
             <title>CrazyTyper Export</title>
             <style>
+                ${customFontCSS}
+                
                 @page {
                     size: A4;
                     margin: 1in 1.25in;
@@ -695,10 +721,12 @@ function loadCustomFont(file, mode) {
             // Add font to document
             document.fonts.add(loadedFont);
             
-            // Store font info
+            // Store font info including the data for PDF export
             customFonts[mode] = {
                 name: fontName,
-                family: fontName
+                family: fontName,
+                data: fontData,
+                fontFace: loadedFont
             };
             
             // Create CSS rule for the font
