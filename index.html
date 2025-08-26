@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRAZYTYPER - TYPEWRITER TEXT MACHINE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="brutal-title">CRAZYTYPER</h1>
+                <p class="brutal-subtitle">MAKE TEXT LOOK LIKE REAL TYPEWRITER</p>
+                <div class="header-decoration"></div>
+            </div>
+        </header>
+
+        <div class="tabs-container">
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="generate">⚡ GENERATE TEXT</button>
+                <button class="tab-btn" data-tab="transform">🔧 TRANSFORM TEXT</button>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <!-- GENERATE TAB -->
+            <div id="generateTab" class="tab-content active">
+                <div class="brutal-card">
+                    <form id="textGeneratorForm">
+                        <div class="input-group">
+                            <label class="brutal-label">WHAT SHOULD THE TEXT BE ABOUT?</label>
+                            <textarea id="textPrompt" class="brutal-textarea" placeholder="Type your prompt here... (e.g., 'A love letter from the 1950s', 'A business memo from 1960')" rows="4" required></textarea>
+                        </div>
+
+                        <div class="options-grid">
+                            <div class="input-group">
+                                <label class="brutal-label">TYPEWRITER FONT</label>
+                                <select id="fontSelect" class="brutal-select">
+                                    <option value="courier-prime">COURIER PRIME (CLASSIC)</option>
+                                    <option value="space-mono">SPACE MONO (MODERN)</option>
+                                    <option value="jetbrains-mono">JETBRAINS MONO (CLEAN)</option>
+                                    <option value="source-code-pro">SOURCE CODE PRO (TECH)</option>
+                                    <option value="ibm-plex-mono">IBM PLEX MONO (CORP)</option>
+                                    <option value="custom">CUSTOM FONT</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group" id="customFontGroup" style="display: none;">
+                                <label class="brutal-label">UPLOAD CUSTOM FONT</label>
+                                <input type="file" id="customFontUpload" class="brutal-file-input" accept=".woff,.woff2,.ttf,.otf">
+                                <div class="font-upload-info">
+                                    <small>Supported: .woff, .woff2, .ttf, .otf files</small>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="brutal-label">LENGTH</label>
+                                <select id="pageLength" class="brutal-select">
+                                    <option value="quarter">QUARTER PAGE (~100 words)</option>
+                                    <option value="half">HALF PAGE (~200 words)</option>
+                                    <option value="full" selected>FULL PAGE (~400 words)</option>
+                                    <option value="double">TWO PAGES (~800 words)</option>
+                                    <option value="triple">THREE PAGES (~1200 words)</option>
+                                    <option value="fivepage">FIVE PAGES (~2000 words)</option>
+                                    <option value="tenpage">TEN PAGES (~4000 words)</option>
+                                    <option value="twentypage">TWENTY PAGES (~8000 words)</option>
+                                    <option value="fiftypage">FIFTY PAGES (~20000 words)</option>
+                                    <option value="custom">CUSTOM LENGTH</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group" id="customWordCountGroup" style="display: none;">
+                                <label class="brutal-label">CUSTOM WORD COUNT</label>
+                                <input type="number" id="customWordCount" class="brutal-input" placeholder="Enter word count..." min="50" max="50000" step="50">
+                            </div>
+
+                            <div class="input-group">
+                                <label class="brutal-label">IMPERFECTION LEVEL</label>
+                                <select id="imperfectionLevel" class="brutal-select">
+                                    <option value="light">LIGHT (Subtle)</option>
+                                    <option value="medium" selected>MEDIUM (Noticeable)</option>
+                                    <option value="heavy">HEAVY (Very Authentic)</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="brutal-label">TIME PERIOD</label>
+                                <select id="timeEra" class="brutal-select">
+                                    <option value="1920s">1920s (EARLY TYPEWRITER)</option>
+                                    <option value="1940s">1940s (WAR ERA)</option>
+                                    <option value="1950s" selected>1950s (CLASSIC ERA)</option>
+                                    <option value="1960s">1960s (MODERN)</option>
+                                    <option value="1970s">1970s (ELECTRIC)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="generateBtn" class="brutal-button primary">
+                            <span id="btnText">⚡ GENERATE TYPEWRITER TEXT</span>
+                            <span id="btnLoading" class="hidden">GENERATING...</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TRANSFORM TAB -->
+            <div id="transformTab" class="tab-content">
+                <div class="brutal-card">
+                    <form id="textTransformForm">
+                        <div class="input-group">
+                            <label class="brutal-label">PASTE YOUR TEXT HERE</label>
+                            <textarea id="userText" class="brutal-textarea" placeholder="Paste or type your text here and watch it transform into authentic typewriter text..." rows="8" required></textarea>
+                        </div>
+
+                        <div class="options-grid">
+                            <div class="input-group">
+                                <label class="brutal-label">TYPEWRITER FONT</label>
+                                <select id="fontSelectTransform" class="brutal-select">
+                                    <option value="courier-prime">COURIER PRIME (CLASSIC)</option>
+                                    <option value="space-mono">SPACE MONO (MODERN)</option>
+                                    <option value="jetbrains-mono">JETBRAINS MONO (CLEAN)</option>
+                                    <option value="source-code-pro">SOURCE CODE PRO (TECH)</option>
+                                    <option value="ibm-plex-mono">IBM PLEX MONO (CORP)</option>
+                                    <option value="custom">CUSTOM FONT</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group" id="customFontGroupTransform" style="display: none;">
+                                <label class="brutal-label">UPLOAD CUSTOM FONT</label>
+                                <input type="file" id="customFontUploadTransform" class="brutal-file-input" accept=".woff,.woff2,.ttf,.otf">
+                                <div class="font-upload-info">
+                                    <small>Supported: .woff, .woff2, .ttf, .otf files</small>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="brutal-label">IMPERFECTION LEVEL</label>
+                                <select id="imperfectionLevelTransform" class="brutal-select">
+                                    <option value="light">LIGHT (Subtle)</option>
+                                    <option value="medium" selected>MEDIUM (Noticeable)</option>
+                                    <option value="heavy">HEAVY (Very Authentic)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="transformBtn" class="brutal-button primary">
+                            <span id="transformBtnText">🔧 TRANSFORM TO TYPEWRITER</span>
+                            <span id="transformBtnLoading" class="hidden">TRANSFORMING...</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="outputSection" class="output-section hidden">
+            <div class="brutal-card output-card">
+                <div class="output-controls">
+                    <button id="copyBtn" class="brutal-button secondary">📋 COPY</button>
+                    <button id="printBtn" class="brutal-button secondary">🖨️ PRINT</button>
+                    <button id="regenerateBtn" class="brutal-button secondary">🔄 REGENERATE</button>
+                </div>
+                
+                <div id="typewriterOutput" class="typewriter-output brutal-typewriter"></div>
+            </div>
+        </div>
+
+        <div id="errorSection" class="error-section hidden">
+            <div class="brutal-card error-card">
+                <h3 class="error-title">⚠️ ERROR!</h3>
+                <p class="error-message">Something went wrong. Try again!</p>
+                <p id="errorMessage" class="error-details"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
