@@ -44,22 +44,22 @@ body {
 }
 
 .brutal-title {
-    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-size: clamp(2rem, 6vw, 3.5rem);
     font-weight: 700;
     letter-spacing: -2px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     text-transform: uppercase;
-    text-shadow: 4px 4px 0px #FF6B35;
+    text-shadow: 3px 3px 0px #FF6B35;
     font-family: 'Space Grotesk', sans-serif;
 }
 
 .brutal-subtitle {
-    font-size: clamp(1rem, 3vw, 1.5rem);
+    font-size: clamp(0.9rem, 2.5vw, 1.2rem);
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
     color: #FFE066;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .header-decoration {
@@ -519,6 +519,7 @@ body {
     .output-controls,
     .error-section,
     .stats-display,
+    .footer,
     nav,
     button,
     .btn {
@@ -565,4 +566,46 @@ body {
         transition: none !important;
         transform: none !important;
     }
+}
+
+/* FOOTER */
+.footer {
+    text-align: center;
+    padding: 24px 16px;
+    margin-top: 32px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    color: #666;
+    border-top: 2px solid #E8E8E8;
+}
+
+.footer p {
+    margin: 0;
+    font-weight: 500;
+}
+
+.footer a {
+    color: #FF6B35;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.footer a:hover {
+    color: #66D9EF;
+    text-shadow: 1px 1px 0px #000;
+}
+
+.heart {
+    color: #FF6B35;
+    display: inline-block;
+    animation: heartbeat 2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    14% { transform: scale(1.1); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.1); }
+    70% { transform: scale(1); }
 }
