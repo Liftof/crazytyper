@@ -27,6 +27,14 @@ const tabContents = document.querySelectorAll('.tab-content');
 
 // Typewriter imperfection settings
 const imperfectionTypes = {
+    minimal: {
+        typoChance: 0.001,
+        fadedChance: 0.005,
+        heavyChance: 0.003,
+        unevenChance: 0.002,
+        spacingChance: 0.002,
+        stuckKeyChance: 0.0005
+    },
     light: {
         typoChance: 0.005,
         fadedChance: 0.02,
@@ -240,21 +248,21 @@ async function generateText(prompt, pageLength, timeEra) {
 }
 
 function displayTypewriterText(text, mode) {
-    let fontSelect, imperfectionLevel;
+    let fontSelect, errorLevel;
     
     if (mode === 'generate') {
         fontSelect = document.getElementById('fontSelect');
-        imperfectionLevel = document.getElementById('imperfectionLevel').value;
+        errorLevel = document.getElementById('errorLevel').value;
     } else {
         fontSelect = document.getElementById('fontSelectTransform');
-        imperfectionLevel = document.getElementById('imperfectionLevelTransform').value;
+        errorLevel = document.getElementById('errorLevelTransform').value;
     }
     
     // Apply font class
     typewriterOutput.className = 'typewriter-output brutal-typewriter font-' + fontSelect.value;
     
     // Apply typewriter imperfections
-    const imperfectedText = applyTypewriterImperfections(text, imperfectionLevel);
+    const imperfectedText = applyTypewriterImperfections(text, errorLevel);
     
     // Display the text with a typing animation
     animateTyping(imperfectedText);

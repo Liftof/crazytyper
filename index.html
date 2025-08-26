@@ -58,6 +58,16 @@
                             </div>
 
                             <div class="input-group">
+                                <label class="brutal-label">TYPEWRITER ERRORS</label>
+                                <select id="errorLevel" class="brutal-select">
+                                    <option value="minimal">MINIMAL ERRORS (Clean)</option>
+                                    <option value="light">LIGHT ERRORS (Subtle)</option>
+                                    <option value="medium" selected>MEDIUM ERRORS (Balanced)</option>
+                                    <option value="heavy">HEAVY ERRORS (Authentic)</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
                                 <label class="brutal-label">LENGTH</label>
                                 <select id="pageLength" class="brutal-select">
                                     <option value="quarter">QUARTER PAGE (~100 words)</option>
@@ -78,14 +88,6 @@
                                 <input type="number" id="customWordCount" class="brutal-input" placeholder="Enter word count..." min="50" max="50000" step="50">
                             </div>
 
-                            <div class="input-group">
-                                <label class="brutal-label">IMPERFECTION LEVEL</label>
-                                <select id="imperfectionLevel" class="brutal-select">
-                                    <option value="light">LIGHT (Subtle)</option>
-                                    <option value="medium" selected>MEDIUM (Noticeable)</option>
-                                    <option value="heavy">HEAVY (Very Authentic)</option>
-                                </select>
-                            </div>
 
                             <div class="input-group">
                                 <label class="brutal-label">TIME PERIOD</label>
@@ -138,11 +140,12 @@
                             </div>
 
                             <div class="input-group">
-                                <label class="brutal-label">IMPERFECTION LEVEL</label>
-                                <select id="imperfectionLevelTransform" class="brutal-select">
-                                    <option value="light">LIGHT (Subtle)</option>
-                                    <option value="medium" selected>MEDIUM (Noticeable)</option>
-                                    <option value="heavy">HEAVY (Very Authentic)</option>
+                                <label class="brutal-label">TYPEWRITER ERRORS</label>
+                                <select id="errorLevelTransform" class="brutal-select">
+                                    <option value="minimal">MINIMAL ERRORS (Clean)</option>
+                                    <option value="light">LIGHT ERRORS (Subtle)</option>
+                                    <option value="medium" selected>MEDIUM ERRORS (Balanced)</option>
+                                    <option value="heavy">HEAVY ERRORS (Authentic)</option>
                                 </select>
                             </div>
                         </div>
