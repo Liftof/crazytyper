@@ -536,32 +536,75 @@ function exportToPDF() {
     let customFontCSS = '';
     if (currentFont && currentFont.data) {
         try {
-            // Convert ArrayBuffer to base64
-            const base64Font = btoa(String.fromCharCode(...new Uint8Array(currentFont.data)));
-            const fontFormat = currentFont.name.toLowerCase().endsWith('.woff2') ? 'woff2' : 
-                              currentFont.name.toLowerCase().endsWith('.woff') ? 'woff' : 
-                              currentFont.name.toLowerCase().endsWith('.ttf') ? 'truetype' : 'opentype';
+            console.log('PDF: Processing custom font:', {
+                name: currentFont.name,
+                family: currentFont.family,
+                dataSize: currentFont.data.byteLength,
+                dataType: currentFont.data.constructor.name
+            });
+
+            // Better base64 conversion that handles large files
+            const uint8Array = new Uint8Array(currentFont.data);
+            let binaryString = '';
+            const chunkSize = 0x8000; // 32KB chunks to avoid call stack issues
+            
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                const chunk = uint8Array.subarray(i, i + chunkSize);
+                binaryString += String.fromCharCode.apply(null, chunk);
+            }
+            const base64Font = btoa(binaryString);
+            
+            // Better font format detection
+            let fontFormat = 'opentype'; // default
+            let mimeType = 'font/otf';
+            
+            const fileName = currentFont.name.toLowerCase();
+            if (fileName.endsWith('.woff2')) {
+                fontFormat = 'woff2';
+                mimeType = 'font/woff2';
+            } else if (fileName.endsWith('.woff')) {
+                fontFormat = 'woff';
+                mimeType = 'font/woff';
+            } else if (fileName.endsWith('.ttf')) {
+                fontFormat = 'truetype';
+                mimeType = 'font/ttf';
+            }
+            
+            console.log('PDF: Font format detected:', fontFormat, mimeType);
             
             customFontCSS = `
                 @font-face {
-                    font-family: '${currentFont.family}';
-                    src: url(data:font/${fontFormat};base64,${base64Font});
+                    font-family: 'CustomTypewriterFont';
+                    src: url('data:${mimeType};base64,${base64Font}') format('${fontFormat}');
                     font-display: block;
+                    font-weight: normal;
+                    font-style: normal;
                 }
-                .content, .font-custom {
-                    font-family: '${currentFont.family}', 'Courier New', monospace !important;
+                
+                * {
+                    font-family: 'CustomTypewriterFont', 'Courier New', monospace !important;
                 }
-                body {
-                    font-family: '${currentFont.family}', 'Courier New', monospace !important;
+                
+                body, .content, .font-custom {
+                    font-family: 'CustomTypewriterFont', 'Courier New', monospace !important;
                 }
             `;
-            console.log('Custom font CSS generated for:', currentFont.name);
+            
+            console.log('PDF: Custom font CSS generated successfully');
+            console.log('PDF: Base64 size:', base64Font.length, 'characters');
         
-        // Show user that custom font is being embedded
-        showTemporaryMessage(pdfBtn, 'Loading custom font...');
+            // Show user that custom font is being embedded
+            showTemporaryMessage(pdfBtn, 'Embedding custom font...');
         } catch (error) {
             console.error('Error generating custom font CSS:', error);
+            console.error('Font data details:', {
+                hasData: !!currentFont.data,
+                dataSize: currentFont.data?.byteLength,
+                dataType: currentFont.data?.constructor.name
+            });
         }
+    } else {
+        console.log('PDF: No custom font detected, using default fonts');
     }
     
     printWindow.document.write(`
@@ -670,22 +713,44 @@ function exportToPDF() {
             
             // Try to detect when font is loaded in the new window
             const checkFontLoad = () => {
-                const testElement = printWindow.document.querySelector('.content');
-                const computedStyle = printWindow.getComputedStyle(testElement);
-                console.log('PDF: Font family applied:', computedStyle.fontFamily);
-                
-                setTimeout(() => {
-                    console.log('PDF: Triggering print with custom font');
-                    printWindow.print();
+                try {
+                    const testElement = printWindow.document.querySelector('.content');
+                    const computedStyle = printWindow.getComputedStyle(testElement);
+                    console.log('PDF: Font family applied:', computedStyle.fontFamily);
                     
-                    // Close the window after printing
+                    // Also check if the font loaded properly
+                    printWindow.document.fonts.ready.then(() => {
+                        console.log('PDF: All fonts loaded in PDF window');
+                        console.log('PDF: Available fonts:', Array.from(printWindow.document.fonts).map(f => f.family));
+                        
+                        setTimeout(() => {
+                            console.log('PDF: Triggering print with custom font');
+                            printWindow.print();
+                            
+                            // Close the window after printing
+                            setTimeout(() => {
+                                printWindow.close();
+                            }, 1000);
+                        }, 500);
+                    }).catch(error => {
+                        console.error('PDF: Font loading error:', error);
+                        // Print anyway with fallback
+                        setTimeout(() => {
+                            printWindow.print();
+                            setTimeout(() => printWindow.close(), 1000);
+                        }, 500);
+                    });
+                } catch (error) {
+                    console.error('PDF: Error checking font load:', error);
+                    // Print anyway with fallback
                     setTimeout(() => {
-                        printWindow.close();
-                    }, 1000);
-                }, 500);
+                        printWindow.print();
+                        setTimeout(() => printWindow.close(), 1000);
+                    }, 500);
+                }
             };
             
-            setTimeout(checkFontLoad, 1500); // Extra time for custom fonts
+            setTimeout(checkFontLoad, 2000); // Extra time for custom fonts
         } else {
             console.log('PDF: No custom font, using standard delay');
             setTimeout(() => {
