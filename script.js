@@ -526,6 +526,9 @@ function exportToPDF() {
                 }
             `;
             console.log('Custom font CSS generated for:', currentFont.name);
+        
+        // Show user that custom font is being embedded
+        showTemporaryMessage(pdfBtn, 'Loading custom font...');
         } catch (error) {
             console.error('Error generating custom font CSS:', error);
         }
@@ -631,16 +634,39 @@ function exportToPDF() {
     setTimeout(() => {
         printWindow.focus();
         
-        // If custom font, wait a bit more for it to load
-        const fontLoadDelay = currentFont && currentFont.data ? 1000 : 100;
-        setTimeout(() => {
-            printWindow.print();
+        // If custom font, wait a bit more for it to load and verify
+        if (currentFont && currentFont.data) {
+            console.log('PDF: Custom font detected, waiting for load...');
             
-            // Close the window after printing
+            // Try to detect when font is loaded in the new window
+            const checkFontLoad = () => {
+                const testElement = printWindow.document.querySelector('.content');
+                const computedStyle = printWindow.getComputedStyle(testElement);
+                console.log('PDF: Font family applied:', computedStyle.fontFamily);
+                
+                setTimeout(() => {
+                    console.log('PDF: Triggering print with custom font');
+                    printWindow.print();
+                    
+                    // Close the window after printing
+                    setTimeout(() => {
+                        printWindow.close();
+                    }, 1000);
+                }, 500);
+            };
+            
+            setTimeout(checkFontLoad, 1500); // Extra time for custom fonts
+        } else {
+            console.log('PDF: No custom font, using standard delay');
             setTimeout(() => {
-                printWindow.close();
-            }, 1000);
-        }, fontLoadDelay);
+                printWindow.print();
+                
+                // Close the window after printing
+                setTimeout(() => {
+                    printWindow.close();
+                }, 1000);
+            }, 100);
+        }
     }, 500);
 }
 
