@@ -483,28 +483,44 @@ function exportToPDF() {
     const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
     const currentFont = customFonts[activeTab];
     
+    console.log('PDF Export Debug:', {
+        activeTab,
+        currentFont,
+        hasCustomClass: outputElement.classList.contains('font-custom'),
+        customFonts
+    });
+    
     // Create a new window with clean content for PDF export
     const printWindow = window.open('', '_blank');
     const htmlContent = outputElement.innerHTML;
     
     // Generate custom font CSS if a custom font is being used
     let customFontCSS = '';
-    if (currentFont && outputElement.classList.contains('font-custom')) {
-        // Convert ArrayBuffer to base64
-        const base64Font = btoa(String.fromCharCode(...new Uint8Array(currentFont.data)));
-        const fontFormat = currentFont.name.toLowerCase().endsWith('.woff2') ? 'woff2' : 
-                          currentFont.name.toLowerCase().endsWith('.woff') ? 'woff' : 
-                          currentFont.name.toLowerCase().endsWith('.ttf') ? 'truetype' : 'opentype';
-        
-        customFontCSS = `
-            @font-face {
-                font-family: '${currentFont.family}';
-                src: url(data:font/${fontFormat};base64,${base64Font});
-            }
-            .font-custom, .content {
-                font-family: '${currentFont.family}', monospace !important;
-            }
-        `;
+    if (currentFont && currentFont.data) {
+        try {
+            // Convert ArrayBuffer to base64
+            const base64Font = btoa(String.fromCharCode(...new Uint8Array(currentFont.data)));
+            const fontFormat = currentFont.name.toLowerCase().endsWith('.woff2') ? 'woff2' : 
+                              currentFont.name.toLowerCase().endsWith('.woff') ? 'woff' : 
+                              currentFont.name.toLowerCase().endsWith('.ttf') ? 'truetype' : 'opentype';
+            
+            customFontCSS = `
+                @font-face {
+                    font-family: '${currentFont.family}';
+                    src: url(data:font/${fontFormat};base64,${base64Font});
+                    font-display: block;
+                }
+                .content, .font-custom {
+                    font-family: '${currentFont.family}', 'Courier New', monospace !important;
+                }
+                body {
+                    font-family: '${currentFont.family}', 'Courier New', monospace !important;
+                }
+            `;
+            console.log('Custom font CSS generated for:', currentFont.name);
+        } catch (error) {
+            console.error('Error generating custom font CSS:', error);
+        }
     }
     
     printWindow.document.write(`
@@ -603,15 +619,20 @@ function exportToPDF() {
     
     printWindow.document.close();
     
-    // Wait for content to load, then trigger print dialog
+    // Wait for content and fonts to load, then trigger print dialog
     setTimeout(() => {
         printWindow.focus();
-        printWindow.print();
         
-        // Close the window after printing
+        // If custom font, wait a bit more for it to load
+        const fontLoadDelay = currentFont && currentFont.data ? 1000 : 100;
         setTimeout(() => {
-            printWindow.close();
-        }, 1000);
+            printWindow.print();
+            
+            // Close the window after printing
+            setTimeout(() => {
+                printWindow.close();
+            }, 1000);
+        }, fontLoadDelay);
     }, 500);
 }
 
