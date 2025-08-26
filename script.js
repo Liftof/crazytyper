@@ -258,8 +258,21 @@ function displayTypewriterText(text, mode) {
         errorLevel = document.getElementById('errorLevelTransform').value;
     }
     
+    console.log('displayTypewriterText debug:', {
+        mode,
+        fontSelectValue: fontSelect.value,
+        customFonts,
+        hasCustomFontForMode: customFonts[mode]
+    });
+    
     // Apply font class
     typewriterOutput.className = 'typewriter-output brutal-typewriter font-' + fontSelect.value;
+    
+    // If custom font is selected, also apply the custom font class
+    if (fontSelect.value === 'custom' && customFonts[mode]) {
+        typewriterOutput.classList.add('font-custom');
+        console.log('Applied custom font class for mode:', mode, customFonts[mode].name);
+    }
     
     // Apply typewriter imperfections
     const imperfectedText = applyTypewriterImperfections(text, errorLevel);
@@ -487,15 +500,32 @@ function exportToPDF() {
         return;
     }
     
-    // Detect current tab to check for custom font
+    // Detect current tab and mode to check for custom font
     const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
-    const currentFont = customFonts[activeTab];
+    
+    // Check both activeTab and font-custom class to determine if custom font is used
+    let currentFont = null;
+    let currentMode = null;
+    
+    // First, check if the output element has font-custom class
+    if (outputElement.classList.contains('font-custom')) {
+        // Try to find which mode has a custom font loaded
+        if (customFonts['generate'] && activeTab === 'generate') {
+            currentFont = customFonts['generate'];
+            currentMode = 'generate';
+        } else if (customFonts['transform'] && activeTab === 'transform') {
+            currentFont = customFonts['transform'];
+            currentMode = 'transform';
+        }
+    }
     
     console.log('PDF Export Debug:', {
         activeTab,
         currentFont,
+        currentMode,
         hasCustomClass: outputElement.classList.contains('font-custom'),
-        customFonts
+        customFonts,
+        outputClasses: outputElement.className
     });
     
     // Create a new window with clean content for PDF export
@@ -795,6 +825,13 @@ function loadCustomFont(file, mode) {
                 fontFace: loadedFont
             };
             
+            console.log('Custom font stored for mode:', mode, {
+                name: fontName,
+                dataSize: fontData.byteLength,
+                mode: mode,
+                customFonts
+            });
+            
             // Create CSS rule for the font
             const style = document.createElement('style');
             style.textContent = `
@@ -803,6 +840,12 @@ function loadCustomFont(file, mode) {
                 }
             `;
             document.head.appendChild(style);
+            
+            // CRITICAL FIX: Automatically select "custom" in the font dropdown
+            const fontSelectId = mode === 'generate' ? 'fontSelect' : 'fontSelectTransform';
+            const fontSelect = document.getElementById(fontSelectId);
+            fontSelect.value = 'custom';
+            console.log('Auto-selected "custom" font for mode:', mode);
             
             // Find the label near the file input for feedback
             const fileInput = mode === 'generate' 
