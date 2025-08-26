@@ -1,7 +1,7 @@
 // Backend API Configuration
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
     ? 'http://localhost:3001' 
-    : 'https://crazytyper-backend.onrender.com'; // You'll update this with your Render URL
+    : 'https://crazytyper.onrender.com';
 
 // DOM Elements
 const generateForm = document.getElementById('textGeneratorForm');
