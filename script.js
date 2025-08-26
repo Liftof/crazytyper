@@ -481,7 +481,7 @@ function exportToPDF() {
     
     // Create a new window with clean content for PDF export
     const printWindow = window.open('', '_blank');
-    const textContent = outputElement.textContent;
+    const htmlContent = outputElement.innerHTML;
     
     printWindow.document.write(`
         <!DOCTYPE html>
@@ -516,15 +516,61 @@ function exportToPDF() {
                     page-break-inside: avoid;
                     orphans: 3;
                     widows: 3;
+                    font-family: 'Courier New', monospace;
+                }
+                
+                /* Typewriter imperfections */
+                .char-faded {
+                    opacity: 0.7;
+                }
+                
+                .char-heavy {
+                    font-weight: bold;
+                    color: #1a252f;
+                }
+                
+                .char-light {
+                    opacity: 0.8;
+                    font-weight: 300;
+                }
+                
+                .char-uneven {
+                    position: relative;
+                    top: 1px;
+                }
+                
+                .char-uneven-down {
+                    position: relative;
+                    top: -1px;
+                }
+                
+                .char-spaced {
+                    margin-left: 1px;
+                }
+                
+                .char-tight {
+                    margin-left: -0.5px;
                 }
                 
                 @media print {
-                    body { print-color-adjust: exact; }
+                    body { 
+                        print-color-adjust: exact;
+                        -webkit-print-color-adjust: exact;
+                    }
+                    .char-faded { opacity: 0.7; }
+                    .char-heavy { 
+                        font-weight: bold; 
+                        color: #1a252f; 
+                    }
+                    .char-light { 
+                        opacity: 0.8; 
+                        font-weight: 300; 
+                    }
                 }
             </style>
         </head>
         <body>
-            <div class="content">${textContent}</div>
+            <div class="content">${htmlContent}</div>
         </body>
         </html>
     `);
