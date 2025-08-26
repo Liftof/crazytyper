@@ -435,7 +435,18 @@ function fallbackCopyToClipboard(text) {
 }
 
 function printDocument() {
-    window.print();
+    // Ensure the output is visible and ready for printing
+    const outputElement = document.querySelector('.typewriter-output');
+    
+    if (!outputElement || !outputElement.textContent.trim()) {
+        alert('No content to print. Please generate or transform some text first.');
+        return;
+    }
+    
+    // Add a small delay to ensure styles are applied
+    setTimeout(() => {
+        window.print();
+    }, 100);
 }
 
 function showTemporaryMessage(button, message) {

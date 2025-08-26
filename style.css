@@ -479,46 +479,90 @@ body {
     animation: pulse 2s infinite;
 }
 
-/* Print styles */
+/* Print styles - Realistic typewriter document */
 @media print {
-    body {
+    * {
+        box-sizing: border-box;
+    }
+    
+    @page {
+        size: A4;
+        margin: 1in 1.25in;
         background: white;
-        color: black;
-        font-size: 12pt;
-        line-height: 1.5;
-        margin: 0;
-        padding: 0;
+    }
+    
+    body {
+        background: white !important;
+        color: #1a1a1a !important;
+        font-family: 'Courier New', monospace !important;
+        font-size: 11pt !important;
+        line-height: 1.6 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
     }
     
     .container {
-        box-shadow: none;
-        border-radius: 0;
-        max-width: none;
-        margin: 0;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
     }
     
+    /* Hide everything except the typewriter output */
     header,
     .generator-section,
     .output-controls,
-    .error-section {
-        display: none;
+    .error-section,
+    .stats-display,
+    nav,
+    button,
+    .btn {
+        display: none !important;
     }
     
     .output-section {
-        padding: 20px;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
     }
     
     .typewriter-output {
-        background: white;
-        border: none;
-        box-shadow: none;
-        padding: 0;
-        min-height: auto;
-        font-size: 12pt;
-        line-height: 1.5;
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        min-height: auto !important;
+        font-family: 'Courier New', monospace !important;
+        font-size: 11pt !important;
+        line-height: 1.6 !important;
+        color: #1a1a1a !important;
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        page-break-inside: avoid;
+        orphans: 3;
+        widows: 3;
     }
     
     .typewriter-output::before {
-        display: none;
+        display: none !important;
+    }
+    
+    /* Ensure proper paragraph spacing */
+    .typewriter-output p {
+        margin: 0 0 1em 0 !important;
+        text-indent: 0 !important;
+    }
+    
+    /* Remove any hover effects or animations */
+    * {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
     }
 }
