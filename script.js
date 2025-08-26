@@ -18,6 +18,7 @@ const errorSection = document.getElementById('errorSection');
 const errorMessage = document.getElementById('errorMessage');
 const copyBtn = document.getElementById('copyBtn');
 const printBtn = document.getElementById('printBtn');
+const pdfBtn = document.getElementById('pdfBtn');
 const regenerateBtn = document.getElementById('regenerateBtn');
 
 // Tab elements
@@ -83,11 +84,15 @@ const commonTypos = {
 // Words that might get stuck keys (repeated letters)
 const stuckKeyWords = ['the', 'and', 'that', 'with', 'have', 'this', 'will', 'your', 'from', 'they'];
 
+// Request management
+let currentController = null;
+
 // Event listeners
 generateForm.addEventListener('submit', handleGenerateSubmit);
 transformForm.addEventListener('submit', handleTransformSubmit);
 copyBtn.addEventListener('click', copyToClipboard);
 printBtn.addEventListener('click', printDocument);
+pdfBtn.addEventListener('click', exportToPDF);
 regenerateBtn.addEventListener('click', regenerateText);
 
 // Tab switching
@@ -151,6 +156,10 @@ async function handleGenerateSubmit(e) {
         const generatedText = await generateText(prompt, pageLength, timeEra);
         displayTypewriterText(generatedText, 'generate');
     } catch (error) {
+        if (error.name === 'AbortError') {
+            console.log('Request was cancelled');
+            return; // Don't show error for cancelled requests
+        }
         console.error('Error generating text:', error);
         showError('Failed to generate text. Please check your API key and try again.');
     } finally {
@@ -183,6 +192,14 @@ async function handleTransformSubmit(e) {
 }
 
 async function generateText(prompt, pageLength, timeEra) {
+    // Cancel previous request if any
+    if (currentController) {
+        currentController.abort();
+    }
+    
+    // Create new AbortController for this request
+    currentController = new AbortController();
+    
     // Handle custom word count
     if (pageLength === 'custom') {
         const customWordCount = document.getElementById('customWordCount').value;
@@ -200,7 +217,8 @@ async function generateText(prompt, pageLength, timeEra) {
             prompt: prompt.trim(),
             pageLength: pageLength,
             timeEra: timeEra
-        })
+        }),
+        signal: currentController.signal
     });
 
     if (!response.ok) {
@@ -373,6 +391,10 @@ async function regenerateText() {
             const generatedText = await generateText(prompt, pageLength, timeEra);
             displayTypewriterText(generatedText, 'generate');
         } catch (error) {
+            if (error.name === 'AbortError') {
+                console.log('Request was cancelled');
+                return; // Don't show error for cancelled requests
+            }
             console.error('Error regenerating text:', error);
             showError('Failed to regenerate text. Please try again.');
         } finally {
@@ -447,6 +469,78 @@ function printDocument() {
     setTimeout(() => {
         window.print();
     }, 100);
+}
+
+function exportToPDF() {
+    const outputElement = document.querySelector('.typewriter-output');
+    
+    if (!outputElement || !outputElement.textContent.trim()) {
+        alert('No content to export. Please generate or transform some text first.');
+        return;
+    }
+    
+    // Create a new window with clean content for PDF export
+    const printWindow = window.open('', '_blank');
+    const textContent = outputElement.textContent;
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>CrazyTyper Export</title>
+            <style>
+                @page {
+                    size: A4;
+                    margin: 1in 1.25in;
+                }
+                
+                * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                body {
+                    font-family: 'Courier New', monospace;
+                    font-size: 11pt;
+                    line-height: 1.6;
+                    color: #1a1a1a;
+                    background: white;
+                    -webkit-print-color-adjust: exact;
+                    color-adjust: exact;
+                }
+                
+                .content {
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    page-break-inside: avoid;
+                    orphans: 3;
+                    widows: 3;
+                }
+                
+                @media print {
+                    body { print-color-adjust: exact; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="content">${textContent}</div>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    
+    // Wait for content to load, then trigger print dialog
+    setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        
+        // Close the window after printing
+        setTimeout(() => {
+            printWindow.close();
+        }, 1000);
+    }, 500);
 }
 
 function showTemporaryMessage(button, message) {
