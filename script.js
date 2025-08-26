@@ -670,14 +670,25 @@ function exportToPDF() {
     }, 500);
 }
 
-function showTemporaryMessage(button, message) {
-    const originalText = button.textContent;
-    button.textContent = message;
-    button.disabled = true;
+function showTemporaryMessage(element, message) {
+    if (!element) {
+        console.warn('showTemporaryMessage: Element is null, message was:', message);
+        return;
+    }
+    
+    const originalText = element.textContent;
+    const wasDisabled = element.disabled;
+    
+    element.textContent = message;
+    if ('disabled' in element) {
+        element.disabled = true;
+    }
     
     setTimeout(() => {
-        button.textContent = originalText;
-        button.disabled = false;
+        element.textContent = originalText;
+        if ('disabled' in element) {
+            element.disabled = wasDisabled;
+        }
     }, 2000);
 }
 
@@ -793,12 +804,17 @@ function loadCustomFont(file, mode) {
             `;
             document.head.appendChild(style);
             
-            showTemporaryMessage(
-                mode === 'generate' 
-                    ? document.querySelector('label[for="customFontUpload"]')
-                    : document.querySelector('label[for="customFontUploadTransform"]'),
-                'Font loaded successfully!'
-            );
+            // Find the label near the file input for feedback
+            const fileInput = mode === 'generate' 
+                ? document.getElementById('customFontUpload')
+                : document.getElementById('customFontUploadTransform');
+            const label = fileInput ? fileInput.closest('.input-group').querySelector('label') : null;
+            
+            if (label) {
+                showTemporaryMessage(label, 'Font loaded successfully!');
+            } else {
+                console.log('Font loaded successfully:', fontName);
+            }
         }).catch(function(error) {
             console.error('Error loading custom font:', error);
             showError('Failed to load custom font. Please try a different file.');
