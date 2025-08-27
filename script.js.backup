@@ -561,19 +561,19 @@ async function exportToPDF(customConfig = null) {
         showError('No content to export. Please generate or transform some text first.');
         return;
     }
-
-    // Default PDF configuration
+    
+    // Default configuration
     const defaultConfig = {
         margins: { top: 20, bottom: 20, left: 20, right: 20 },
-        showHeader: false,
-        showFooter: false,
+        showHeader: true,
+        showFooter: true,
         showBranding: false,
         showSeparatorLine: true,
         fontSize: 11,
         lineHeight: 1.6
     };
     
-    // Merge custom config with defaults
+    // Use custom config if provided, otherwise use default - ensure margins exist
     const config = customConfig ? {
         margins: customConfig.margins || defaultConfig.margins,
         showHeader: customConfig.showHeader !== undefined ? customConfig.showHeader : defaultConfig.showHeader,
@@ -587,9 +587,75 @@ async function exportToPDF(customConfig = null) {
     // Show loading message
     const loadingBtn = document.getElementById('generateCustomPdf');
     showTemporaryMessage(loadingBtn, 'Generating PDF...');
-
+    
+    // Parse HTML content to preserve typewriter effects
+    const htmlContent = outputElement.innerHTML;
+    const parsedContent = parseTypewriterHTML(htmlContent);
+    
+    // Get current font selection
+    const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+    const fontSelect = activeTab === 'generate' 
+        ? document.getElementById('fontSelect') 
+        : document.getElementById('fontSelectTransform');
+    const selectedFont = fontSelect.value;
+    
+    // Determine which font to use in PDF
+    let pdfFont = 'courier'; // default jsPDF font
+    let fontName = 'Courier New';
+    let customFontData = null;
+    
+    // Map our font selections to jsPDF compatible fonts
+    const fontMap = {
+        'courier-prime': { font: 'courier', name: 'Courier Prime' },
+        'space-mono': { font: 'courier', name: 'Space Mono (Courier fallback)' },
+        'jetbrains-mono': { font: 'courier', name: 'JetBrains Mono (Courier fallback)' },
+        'source-code-pro': { font: 'courier', name: 'Source Code Pro (Courier fallback)' },
+        'ibm-plex-mono': { font: 'courier', name: 'IBM Plex Mono (Courier fallback)' },
+        // Typewriter fonts - use courier as base
+        'jmh-typewriter': { font: 'courier', name: 'JMH Typewriter (Courier base)' },
+        'jmh-typewriter-black': { font: 'courier', name: 'JMH Typewriter Black (Courier base)' },
+        'jmh-typewriter-fine': { font: 'courier', name: 'JMH Typewriter Fine (Courier base)' },
+        'elegant-typewriter': { font: 'courier', name: 'Elegant Typewriter (Courier base)' },
+        'tt2020-base': { font: 'courier', name: 'TT2020 Base (Courier base)' },
+        'tt2020-style-g': { font: 'courier', name: 'TT2020 Style G (Courier base)' },
+        'tox-typewriter': { font: 'courier', name: 'Tox Typewriter (Courier base)' },
+        'traveling-typewriter': { font: 'courier', name: 'Traveling Typewriter (Courier base)' },
+        'gabriele-bad': { font: 'courier', name: 'Gabriele Bad (Courier base)' },
+        // Effect variants - Basic
+        'jmh-typewriter-cross': { font: 'courier', name: 'JMH Cross Effect (Courier base)' },
+        'jmh-typewriter-over': { font: 'courier', name: 'JMH Over Effect (Courier base)' },
+        'jmh-typewriter-under': { font: 'courier', name: 'JMH Under Effect (Courier base)' },
+        // Black variants with effects
+        'jmh-typewriter-black-cross': { font: 'courier', name: 'JMH Black Cross (Courier base)' },
+        'jmh-typewriter-black-over': { font: 'courier', name: 'JMH Black Over (Courier base)' },
+        'jmh-typewriter-black-under': { font: 'courier', name: 'JMH Black Under (Courier base)' },
+        // Fine variants with effects
+        'jmh-typewriter-fine-cross': { font: 'courier', name: 'JMH Fine Cross (Courier base)' },
+        'jmh-typewriter-fine-over': { font: 'courier', name: 'JMH Fine Over (Courier base)' },
+        'jmh-typewriter-fine-under': { font: 'courier', name: 'JMH Fine Under (Courier base)' },
+        // Bold variants with effects
+        'jmh-typewriter-bold-cross': { font: 'courier', name: 'JMH Bold Cross (Courier base)' },
+        'jmh-typewriter-bold-over': { font: 'courier', name: 'JMH Bold Over (Courier base)' },
+        'jmh-typewriter-bold-under': { font: 'courier', name: 'JMH Bold Under (Courier base)' }
+    };
+    
+    if (fontMap[selectedFont]) {
+        pdfFont = fontMap[selectedFont].font;
+        fontName = fontMap[selectedFont].name;
+    }
+    
+    // Try to load custom typewriter font for embedding
+    if (selectedFont.includes('jmh-') || selectedFont.includes('elegant-') || 
+        selectedFont.includes('tt2020') || selectedFont.includes('tox-') || 
+        selectedFont.includes('traveling-') || selectedFont.includes('gabriele-')) {
+        customFontData = await loadFontForPDF(selectedFont);
+        if (customFontData) {
+            fontName = customFontData.name;
+        }
+    }
+    
     try {
-        // Create new jsPDF instance
+        // Create new jsPDF instance - handle different ways jsPDF might be exposed
         let jsPDFClass = null;
         
         if (window.jspdf && window.jspdf.jsPDF) {
@@ -607,125 +673,106 @@ async function exportToPDF(customConfig = null) {
             unit: 'mm',
             format: 'a4'
         });
-
-        // Create a clean clone of the output for image capture
-        const clone = outputElement.cloneNode(true);
-        clone.style.padding = '20px';
-        clone.style.backgroundColor = '#ffffff';
-        clone.style.minHeight = 'auto';
-        clone.style.maxWidth = '800px';
-        clone.style.margin = '0';
-        clone.style.position = 'relative';
         
-        // Create temporary container
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.style.top = '0';
-        container.appendChild(clone);
-        document.body.appendChild(container);
-
-        // Capture as image
-        const canvas = await html2canvas(clone, {
-            backgroundColor: '#ffffff',
-            scale: 1.5,
-            useCORS: true,
-            allowTaint: true,
-            height: clone.scrollHeight + 40,
-            width: clone.scrollWidth + 40
-        });
-
-        // Clean up temporary element
-        document.body.removeChild(container);
-
-        // Calculate page dimensions
-        const pageWidth = 210; // A4 width in mm
-        const pageHeight = 297; // A4 height in mm
+        // Add and set custom font if available
+        if (customFontData) {
+            try {
+                doc.addFileToVFS(customFontData.filename, customFontData.base64);
+                doc.addFont(customFontData.filename, customFontData.fontName, 'normal');
+                doc.setFont(customFontData.fontName);
+                console.log('✅ Custom font embedded:', customFontData.fontName);
+            } catch (error) {
+                console.warn('Failed to embed custom font, using fallback:', error);
+                doc.setFont(pdfFont);
+            }
+        } else {
+            doc.setFont(pdfFont);
+        }
+        doc.setFontSize(config.fontSize);
+        
+        // Calculate page dimensions with custom margins
+        const pageWidth = 210; // A4 width
+        const pageHeight = 297; // A4 height
+        const contentWidth = pageWidth - config.margins.left - config.margins.right;
+        const lineHeight = config.fontSize * config.lineHeight * 0.35; // Convert to mm
+        
         let currentY = config.margins.top;
-
+        
         // Add header if enabled
         if (config.showHeader) {
-            const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
-            const fontSelect = activeTab === 'generate' 
-                ? document.getElementById('fontSelect') 
-                : document.getElementById('fontSelectTransform');
-            const selectedFont = fontSelect.value;
-            
             doc.setFontSize(14);
             doc.text('CrazyTyper Document', config.margins.left, currentY);
-            currentY += 8;
+            currentY += 10;
             
-            doc.setFontSize(9);
-            doc.text(`Font: ${selectedFont}`, config.margins.left, currentY);
+            doc.setFontSize(8);
+            doc.text(`Font: ${fontName}`, config.margins.left, currentY);
             currentY += 5;
             doc.text(`Generated: ${new Date().toLocaleString()}`, config.margins.left, currentY);
             currentY += 8;
             
+            // Add separator line if enabled
             if (config.showSeparatorLine) {
                 doc.line(config.margins.left, currentY, pageWidth - config.margins.right, currentY);
                 currentY += 8;
             }
         }
-
-        // Calculate image dimensions to fit in PDF
-        const availableWidth = pageWidth - config.margins.left - config.margins.right;
-        const availableHeight = pageHeight - currentY - config.margins.bottom - (config.showFooter ? 15 : 0);
         
-        const imageWidth = canvas.width * 0.264583; // Convert pixels to mm (96 DPI)
-        const imageHeight = canvas.height * 0.264583;
+        // Reset font size for content
+        doc.setFontSize(config.fontSize);
         
-        // Scale image to fit if necessary
-        let finalWidth = imageWidth;
-        let finalHeight = imageHeight;
+        // Render content with typewriter effects
+        currentY = renderTypewriterContent(doc, parsedContent, config, currentY, pageHeight, contentWidth, lineHeight);
         
-        if (imageWidth > availableWidth) {
-            finalWidth = availableWidth;
-            finalHeight = (imageHeight * availableWidth) / imageWidth;
-        }
-        
-        if (finalHeight > availableHeight) {
-            finalHeight = availableHeight;
-            finalWidth = (imageWidth * availableHeight) / imageHeight;
-        }
-
-        // Add image to PDF
-        const imgData = canvas.toDataURL('image/png');
-        doc.addImage(imgData, 'PNG', config.margins.left, currentY, finalWidth, finalHeight);
-
         // Add footer if enabled
-        if (config.showFooter) {
-            const footerY = pageHeight - config.margins.bottom + 2;
-            
-            if (config.showSeparatorLine) {
-                doc.line(config.margins.left, footerY - 5, pageWidth - config.margins.right, footerY - 5);
-            }
-            
-            doc.setFontSize(8);
-            doc.text('Page 1', config.margins.left, footerY);
-            
-            if (config.showBranding) {
-                const brandText = 'Generated with CrazyTyper';
-                const textWidth = doc.getTextWidth(brandText);
-                doc.text(brandText, pageWidth - config.margins.right - textWidth, footerY);
+        if (config.showFooter || config.showBranding) {
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                
+                const footerY = pageHeight - config.margins.bottom + 5;
+                
+                if (config.showFooter) {
+                    doc.text(`Page ${i} of ${pageCount}`, config.margins.left, footerY);
+                }
+                
+                if (config.showBranding) {
+                    const brandingText = 'Generated with CrazyTyper';
+                    if (config.showFooter) {
+                        doc.text(` - ${brandingText}`, config.margins.left + 40, footerY);
+                    } else {
+                        doc.text(brandingText, config.margins.left, footerY);
+                    }
+                }
             }
         }
         
         // Save the PDF
-        const timestamp = Date.now();
-        const filename = `crazytyper-${timestamp}.pdf`;
+        const filename = `crazytyper-${new Date().getTime()}.pdf`;
         doc.save(filename);
         
-        showTemporaryMessage(loadingBtn, 'PDF Saved! 📄');
+        // Show success message
+        showTemporaryMessage(loadingBtn, 'PDF Downloaded!');
         
     } catch (error) {
-        console.error('PDF Generation Error:', error);
+        console.error('Error generating PDF:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            jsPDFAvailable: {
+                'window.jspdf': typeof window.jspdf,
+                'window.jsPDF': typeof window.jsPDF,
+                'global jsPDF': typeof jsPDF
+            }
+        });
         showTemporaryMessage(loadingBtn, 'PDF Error - Try Again');
+        console.error('PDF Generation Error:', error);
         
         let userMessage = 'Failed to generate PDF. ';
         if (error.message.includes('jsPDF')) {
             userMessage += 'PDF library not loaded properly. Please refresh the page and try again.';
-        } else if (error.message.includes('html2canvas')) {
-            userMessage += 'Image capture failed. Please try again.';
+        } else if (error.message.includes('Font')) {
+            userMessage += 'Font loading failed. The PDF will use a default font.';
         } else {
             userMessage += 'Please try again or contact support if the problem persists.';
         }
@@ -996,3 +1043,273 @@ async function generateCustomPDF() {
     closePdfConfigModal();
 }
 
+// Font loading for PDF embedding
+async function loadFontForPDF(selectedFont) {
+    const fontMapping = {
+        'jmh-typewriter': 'JMH Typewriter mono.ttf',
+        'jmh-typewriter-black': 'JMH Typewriter mono Black.ttf',
+        'jmh-typewriter-fine': 'JMH Typewriter mono Fine.ttf',
+        'jmh-typewriter-cross': 'JMH Typewriter mono Cross.ttf',
+        'jmh-typewriter-over': 'JMH Typewriter mono Over.ttf',
+        'jmh-typewriter-under': 'JMH Typewriter mono Under.ttf',
+        'jmh-typewriter-black-cross': 'JMH Typewriter mono Black Cross.ttf',
+        'jmh-typewriter-black-over': 'JMH Typewriter mono Black Over.ttf',
+        'jmh-typewriter-black-under': 'JMH Typewriter mono Black Under.ttf',
+        'jmh-typewriter-fine-cross': 'JMH Typewriter mono Fine Cross.ttf',
+        'jmh-typewriter-fine-over': 'JMH Typewriter mono Fine Over.ttf',
+        'jmh-typewriter-fine-under': 'JMH Typewriter mono Fine Under.ttf',
+        'jmh-typewriter-bold-cross': 'JMH Typewriter mono Bold Cross.ttf',
+        'jmh-typewriter-bold-over': 'JMH Typewriter mono Bold Over.ttf',
+        'jmh-typewriter-bold-under': 'JMH Typewriter mono Bold Under.ttf',
+        'elegant-typewriter': 'ELEGANT TYPEWRITER Light.ttf',
+        'tt2020-base': 'TT2020Base-Regular.ttf',
+        'tt2020-style-g': 'TT2020StyleG-Regular-ASCII.ttf',
+        'tox-typewriter': 'Tox Typewriter.ttf',
+        'traveling-typewriter': 'TravelingTypewriter.ttf',
+        'gabriele-bad': 'gabriele-bad.ttf'
+    };
+    
+    const fontFilename = fontMapping[selectedFont];
+    if (!fontFilename) {
+        console.warn('Font mapping not found for:', selectedFont);
+        return null;
+    }
+    
+    try {
+        console.log('🔄 Loading font for PDF:', fontFilename);
+        const response = await fetch(`./fonts/${fontFilename}`);
+        if (!response.ok) {
+            throw new Error(`Font file not found: ${fontFilename}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // Convert to base64 in chunks to avoid memory issues
+        let base64 = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+            const chunk = uint8Array.subarray(i, i + chunkSize);
+            base64 += String.fromCharCode.apply(null, chunk);
+        }
+        const base64Font = btoa(base64);
+        
+        console.log('✅ Font loaded and converted to base64:', fontFilename);
+        
+        return {
+            filename: fontFilename,
+            fontName: selectedFont.replace(/-/g, '_'), // jsPDF font names can't have dashes
+            base64: base64Font,
+            name: fontFilename.replace('.ttf', '')
+        };
+    } catch (error) {
+        console.error('❌ Failed to load font:', fontFilename, error);
+        return null;
+    }
+}
+
+// Parse HTML content to extract typewriter effects
+function parseTypewriterHTML(htmlContent) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    const result = [];
+    
+    function processNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            // Plain text - split into characters
+            const text = node.textContent || '';
+            for (const char of text) {
+                result.push({
+                    char: char,
+                    effects: []
+                });
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // Element with potential effects
+            const effects = [];
+            
+            // Extract typewriter effect classes
+            if (node.classList.contains('char-faded')) effects.push('faded');
+            if (node.classList.contains('char-heavy')) effects.push('heavy'); 
+            if (node.classList.contains('char-light')) effects.push('light');
+            if (node.classList.contains('char-uneven')) effects.push('uneven-up');
+            if (node.classList.contains('char-uneven-down')) effects.push('uneven-down');
+            if (node.classList.contains('char-spaced')) effects.push('spaced');
+            if (node.classList.contains('char-tight')) effects.push('tight');
+            
+            // Process text content of this element
+            const text = node.textContent || '';
+            for (const char of text) {
+                result.push({
+                    char: char,
+                    effects: [...effects]
+                });
+            }
+        }
+    }
+    
+    // Process all child nodes
+    tempDiv.childNodes.forEach(processNode);
+    
+    console.log('📝 Parsed', result.length, 'characters with effects');
+    return result;
+}
+
+// Render content with typewriter effects in PDF
+function renderTypewriterContent(doc, parsedContent, config, startY, pageHeight, contentWidth, baseLineHeight) {
+    let currentY = startY;
+    let currentX = config.margins.left;
+    const charWidth = config.fontSize * 0.35; // Tighter character spacing like real typewriter
+    
+    // Split into paragraphs by detecting double line breaks
+    const paragraphs = [];
+    let currentParagraph = [];
+    
+    for (let i = 0; i < parsedContent.length; i++) {
+        const item = parsedContent[i];
+        
+        if (item.char === '\n') {
+            // Check if next char is also newline (paragraph break)
+            if (i + 1 < parsedContent.length && parsedContent[i + 1].char === '\n') {
+                // End current paragraph
+                if (currentParagraph.length > 0) {
+                    paragraphs.push([...currentParagraph]);
+                    currentParagraph = [];
+                }
+                i++; // Skip the second newline
+            } else {
+                // Single line break within paragraph
+                currentParagraph.push({ char: ' ', effects: [] }); // Convert to space
+            }
+        } else {
+            currentParagraph.push(item);
+        }
+    }
+    
+    // Add final paragraph if any
+    if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph);
+    }
+    
+    // Render each paragraph
+    paragraphs.forEach((paragraph, pIndex) => {
+        if (paragraph.length === 0) return;
+        
+        // Wrap text to fit page width
+        const lines = wrapTextWithEffects(paragraph, contentWidth, charWidth);
+        
+        lines.forEach((line, lIndex) => {
+            // Check if we need a new page
+            if (currentY + baseLineHeight > pageHeight - config.margins.bottom) {
+                doc.addPage();
+                currentY = config.margins.top;
+            }
+            
+            currentX = config.margins.left;
+            
+            // Render each character with its effects
+            line.forEach(item => {
+                if (item.char !== ' ') { // Render non-space characters
+                    renderCharacterWithEffects(doc, item.char, item.effects, currentX, currentY, config.fontSize);
+                }
+                // Always advance position (including for spaces)
+                currentX += charWidth + getExtraSpacing(item.effects);
+            });
+            
+            currentY += baseLineHeight;
+        });
+        
+        // Add paragraph spacing
+        if (pIndex < paragraphs.length - 1) {
+            currentY += baseLineHeight * 0.5;
+        }
+    });
+    
+    return currentY;
+}
+
+// Helper function to wrap text considering effects
+function wrapTextWithEffects(paragraph, maxWidth, charWidth) {
+    const lines = [];
+    let currentLine = [];
+    let currentWidth = 0;
+    const maxLineWidth = maxWidth * 0.8; // Don't use full width, leave natural margin
+    
+    for (let i = 0; i < paragraph.length; i++) {
+        const item = paragraph[i];
+        const itemWidth = charWidth + getExtraSpacing(item.effects);
+        
+        // If adding this character would exceed line width, and we have content
+        if (currentWidth + itemWidth > maxLineWidth && currentLine.length > 0) {
+            // Look for a good break point (space) near current position
+            let breakIndex = currentLine.length - 1;
+            for (let j = currentLine.length - 1; j >= Math.max(0, currentLine.length - 20); j--) {
+                if (currentLine[j].char === ' ') {
+                    breakIndex = j;
+                    break;
+                }
+            }
+            
+            // Split the line at the break point
+            const lineToAdd = currentLine.slice(0, breakIndex + 1);
+            const remainingChars = currentLine.slice(breakIndex + 1);
+            
+            lines.push(lineToAdd);
+            
+            // Start new line with remaining chars plus current item
+            currentLine = [...remainingChars, item];
+            currentWidth = remainingChars.reduce((w, char) => w + charWidth + getExtraSpacing(char.effects), 0) + itemWidth;
+        } else {
+            currentLine.push(item);
+            currentWidth += itemWidth;
+        }
+    }
+    
+    if (currentLine.length > 0) {
+        lines.push(currentLine);
+    }
+    
+    return lines;
+}
+
+// Helper function to get extra spacing for effects
+function getExtraSpacing(effects) {
+    if (effects.includes('spaced')) return 0.5; // Reduced from 1
+    if (effects.includes('tight')) return -0.3; // Reduced from -0.5
+    return 0;
+}
+
+// Render individual character with effects
+function renderCharacterWithEffects(doc, char, effects, x, y, fontSize) {
+    // Apply color/opacity effects
+    let textColor = [0, 0, 0]; // Default black
+    
+    if (effects.includes('faded')) {
+        textColor = [128, 128, 128]; // Gray for faded
+    } else if (effects.includes('heavy')) {
+        // For heavy effect, we'll render the character multiple times slightly offset
+        doc.setTextColor(0, 0, 0);
+        doc.text(char, x, y);
+        doc.text(char, x + 0.1, y); // Slight offset for bold effect
+        return;
+    } else if (effects.includes('light')) {
+        textColor = [180, 180, 180]; // Light gray
+    }
+    
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    
+    // Apply position effects
+    let adjustedY = y;
+    if (effects.includes('uneven-up')) {
+        adjustedY -= 0.5;
+    } else if (effects.includes('uneven-down')) {
+        adjustedY += 0.5;
+    }
+    
+    // Render the character
+    doc.text(char, x, adjustedY);
+    
+    // Reset color to black for next character
+    doc.setTextColor(0, 0, 0);
+}
