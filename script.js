@@ -897,22 +897,28 @@ function optimizeTextProcessing(text, level) {
 }
 
 // PDF CONFIGURATION MODAL FUNCTIONS
+let modalEventListenersAdded = false;
+
 function openPdfConfigModal() {
     const modal = document.getElementById('pdfConfigModal');
     modal.classList.remove('hidden');
     
-    // Add event listeners
-    document.getElementById('closePdfModal').addEventListener('click', closePdfConfigModal);
-    document.getElementById('cancelPdfConfig').addEventListener('click', closePdfConfigModal);
-    document.getElementById('resetPdfConfig').addEventListener('click', resetPdfConfig);
-    document.getElementById('generateCustomPdf').addEventListener('click', generateCustomPDF);
-    
-    // Close modal on background click
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            closePdfConfigModal();
-        }
-    });
+    // Add event listeners only once
+    if (!modalEventListenersAdded) {
+        document.getElementById('closePdfModal').addEventListener('click', closePdfConfigModal);
+        document.getElementById('cancelPdfConfig').addEventListener('click', closePdfConfigModal);
+        document.getElementById('resetPdfConfig').addEventListener('click', resetPdfConfig);
+        document.getElementById('generateCustomPdf').addEventListener('click', generateCustomPDF);
+        
+        // Close modal on background click
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closePdfConfigModal();
+            }
+        });
+        
+        modalEventListenersAdded = true;
+    }
 }
 
 function closePdfConfigModal() {
