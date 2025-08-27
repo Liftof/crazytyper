@@ -1098,7 +1098,7 @@ function parseTypewriterHTML(htmlContent) {
 function renderTypewriterContent(doc, parsedContent, config, startY, pageHeight, contentWidth, baseLineHeight) {
     let currentY = startY;
     let currentX = config.margins.left;
-    const charWidth = config.fontSize * 0.6; // Approximate character width in mm
+    const charWidth = config.fontSize * 0.35; // Tighter character spacing like real typewriter
     
     // Split into paragraphs by detecting double line breaks
     const paragraphs = [];
@@ -1172,20 +1172,37 @@ function wrapTextWithEffects(paragraph, maxWidth, charWidth) {
     const lines = [];
     let currentLine = [];
     let currentWidth = 0;
+    const maxLineWidth = maxWidth * 0.8; // Don't use full width, leave natural margin
     
-    paragraph.forEach(item => {
+    for (let i = 0; i < paragraph.length; i++) {
+        const item = paragraph[i];
         const itemWidth = charWidth + getExtraSpacing(item.effects);
         
-        if (currentWidth + itemWidth > maxWidth && currentLine.length > 0) {
-            // Start new line
-            lines.push([...currentLine]);
-            currentLine = [item];
-            currentWidth = itemWidth;
+        // If adding this character would exceed line width, and we have content
+        if (currentWidth + itemWidth > maxLineWidth && currentLine.length > 0) {
+            // Look for a good break point (space) near current position
+            let breakIndex = currentLine.length - 1;
+            for (let j = currentLine.length - 1; j >= Math.max(0, currentLine.length - 20); j--) {
+                if (currentLine[j].char === ' ') {
+                    breakIndex = j;
+                    break;
+                }
+            }
+            
+            // Split the line at the break point
+            const lineToAdd = currentLine.slice(0, breakIndex + 1);
+            const remainingChars = currentLine.slice(breakIndex + 1);
+            
+            lines.push(lineToAdd);
+            
+            // Start new line with remaining chars plus current item
+            currentLine = [...remainingChars, item];
+            currentWidth = remainingChars.reduce((w, char) => w + charWidth + getExtraSpacing(char.effects), 0) + itemWidth;
         } else {
             currentLine.push(item);
             currentWidth += itemWidth;
         }
-    });
+    }
     
     if (currentLine.length > 0) {
         lines.push(currentLine);
@@ -1196,8 +1213,8 @@ function wrapTextWithEffects(paragraph, maxWidth, charWidth) {
 
 // Helper function to get extra spacing for effects
 function getExtraSpacing(effects) {
-    if (effects.includes('spaced')) return 1;
-    if (effects.includes('tight')) return -0.5;
+    if (effects.includes('spaced')) return 0.5; // Reduced from 1
+    if (effects.includes('tight')) return -0.3; // Reduced from -0.5
     return 0;
 }
 
