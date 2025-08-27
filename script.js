@@ -543,16 +543,22 @@ async function exportAsImage() {
         document.body.removeChild(container);
 
         // Convert to blob and download
-        canvas.toBlob(function(blob) {
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `crazytyper-${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showTemporaryMessage(imageBtn, 'Image Saved! 📸');
-        }, 'image/png', 1.0);
+        const downloadImage = () => {
+            return new Promise((resolve) => {
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `crazytyper-${Date.now()}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    resolve();
+                }, 'image/png', 1.0);
+            });
+        };
+
+        await downloadImage();
+        showTemporaryMessage(imageBtn, 'Image Saved! 📸');
 
     } catch (error) {
         console.error('Image Export Error:', error);
