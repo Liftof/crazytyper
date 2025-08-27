@@ -527,8 +527,9 @@ async function exportToPDF(customConfig = null) {
     const loadingBtn = customConfig ? document.getElementById('generateCustomPdf') : pdfBtn;
     showTemporaryMessage(loadingBtn, 'Generating PDF...');
     
-    // Get the clean text content (remove HTML formatting for PDF)
-    const textContent = outputElement.innerText || outputElement.textContent;
+    // Parse HTML content to preserve typewriter effects
+    const htmlContent = outputElement.innerHTML;
+    const parsedContent = parseTypewriterHTML(htmlContent);
     
     // Get current font selection
     const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
@@ -658,31 +659,8 @@ async function exportToPDF(customConfig = null) {
         // Reset font size for content
         doc.setFontSize(config.fontSize);
         
-        // Split text by paragraphs first
-        const paragraphs = textContent.split(/\n\s*\n/);
-        
-        paragraphs.forEach((paragraph, pIndex) => {
-            if (paragraph.trim()) {
-                // Split paragraph into lines that fit
-                const lines = doc.splitTextToSize(paragraph.trim(), contentWidth);
-                
-                lines.forEach((line, lIndex) => {
-                    // Check if we need a new page (accounting for bottom margin)
-                    if (currentY > pageHeight - config.margins.bottom - lineHeight) {
-                        doc.addPage();
-                        currentY = config.margins.top;
-                    }
-                    
-                    doc.text(line, config.margins.left, currentY);
-                    currentY += lineHeight;
-                });
-                
-                // Add extra space between paragraphs
-                if (pIndex < paragraphs.length - 1) {
-                    currentY += lineHeight * 0.5;
-                }
-            }
-        });
+        // Render content with typewriter effects
+        currentY = renderTypewriterContent(doc, parsedContent, config, currentY, pageHeight, contentWidth, lineHeight);
         
         // Add footer if enabled
         if (config.showFooter || config.showBranding) {
@@ -1056,4 +1034,193 @@ async function loadFontForPDF(selectedFont) {
         console.error('❌ Failed to load font:', fontFilename, error);
         return null;
     }
+}
+
+// Parse HTML content to extract typewriter effects
+function parseTypewriterHTML(htmlContent) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    const result = [];
+    
+    function processNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            // Plain text - split into characters
+            const text = node.textContent || '';
+            for (const char of text) {
+                result.push({
+                    char: char,
+                    effects: []
+                });
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // Element with potential effects
+            const effects = [];
+            
+            // Extract typewriter effect classes
+            if (node.classList.contains('char-faded')) effects.push('faded');
+            if (node.classList.contains('char-heavy')) effects.push('heavy'); 
+            if (node.classList.contains('char-light')) effects.push('light');
+            if (node.classList.contains('char-uneven')) effects.push('uneven-up');
+            if (node.classList.contains('char-uneven-down')) effects.push('uneven-down');
+            if (node.classList.contains('char-spaced')) effects.push('spaced');
+            if (node.classList.contains('char-tight')) effects.push('tight');
+            
+            // Process text content of this element
+            const text = node.textContent || '';
+            for (const char of text) {
+                result.push({
+                    char: char,
+                    effects: [...effects]
+                });
+            }
+        }
+    }
+    
+    // Process all child nodes
+    tempDiv.childNodes.forEach(processNode);
+    
+    console.log('📝 Parsed', result.length, 'characters with effects');
+    return result;
+}
+
+// Render content with typewriter effects in PDF
+function renderTypewriterContent(doc, parsedContent, config, startY, pageHeight, contentWidth, baseLineHeight) {
+    let currentY = startY;
+    let currentX = config.margins.left;
+    const charWidth = config.fontSize * 0.6; // Approximate character width in mm
+    
+    // Split into paragraphs by detecting double line breaks
+    const paragraphs = [];
+    let currentParagraph = [];
+    
+    for (let i = 0; i < parsedContent.length; i++) {
+        const item = parsedContent[i];
+        
+        if (item.char === '\n') {
+            // Check if next char is also newline (paragraph break)
+            if (i + 1 < parsedContent.length && parsedContent[i + 1].char === '\n') {
+                // End current paragraph
+                if (currentParagraph.length > 0) {
+                    paragraphs.push([...currentParagraph]);
+                    currentParagraph = [];
+                }
+                i++; // Skip the second newline
+            } else {
+                // Single line break within paragraph
+                currentParagraph.push({ char: ' ', effects: [] }); // Convert to space
+            }
+        } else {
+            currentParagraph.push(item);
+        }
+    }
+    
+    // Add final paragraph if any
+    if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph);
+    }
+    
+    // Render each paragraph
+    paragraphs.forEach((paragraph, pIndex) => {
+        if (paragraph.length === 0) return;
+        
+        // Wrap text to fit page width
+        const lines = wrapTextWithEffects(paragraph, contentWidth, charWidth);
+        
+        lines.forEach((line, lIndex) => {
+            // Check if we need a new page
+            if (currentY + baseLineHeight > pageHeight - config.margins.bottom) {
+                doc.addPage();
+                currentY = config.margins.top;
+            }
+            
+            currentX = config.margins.left;
+            
+            // Render each character with its effects
+            line.forEach(item => {
+                if (item.char !== ' ') { // Render non-space characters
+                    renderCharacterWithEffects(doc, item.char, item.effects, currentX, currentY, config.fontSize);
+                }
+                // Always advance position (including for spaces)
+                currentX += charWidth + getExtraSpacing(item.effects);
+            });
+            
+            currentY += baseLineHeight;
+        });
+        
+        // Add paragraph spacing
+        if (pIndex < paragraphs.length - 1) {
+            currentY += baseLineHeight * 0.5;
+        }
+    });
+    
+    return currentY;
+}
+
+// Helper function to wrap text considering effects
+function wrapTextWithEffects(paragraph, maxWidth, charWidth) {
+    const lines = [];
+    let currentLine = [];
+    let currentWidth = 0;
+    
+    paragraph.forEach(item => {
+        const itemWidth = charWidth + getExtraSpacing(item.effects);
+        
+        if (currentWidth + itemWidth > maxWidth && currentLine.length > 0) {
+            // Start new line
+            lines.push([...currentLine]);
+            currentLine = [item];
+            currentWidth = itemWidth;
+        } else {
+            currentLine.push(item);
+            currentWidth += itemWidth;
+        }
+    });
+    
+    if (currentLine.length > 0) {
+        lines.push(currentLine);
+    }
+    
+    return lines;
+}
+
+// Helper function to get extra spacing for effects
+function getExtraSpacing(effects) {
+    if (effects.includes('spaced')) return 1;
+    if (effects.includes('tight')) return -0.5;
+    return 0;
+}
+
+// Render individual character with effects
+function renderCharacterWithEffects(doc, char, effects, x, y, fontSize) {
+    // Apply color/opacity effects
+    let textColor = [0, 0, 0]; // Default black
+    
+    if (effects.includes('faded')) {
+        textColor = [128, 128, 128]; // Gray for faded
+    } else if (effects.includes('heavy')) {
+        // For heavy effect, we'll render the character multiple times slightly offset
+        doc.setTextColor(0, 0, 0);
+        doc.text(char, x, y);
+        doc.text(char, x + 0.1, y); // Slight offset for bold effect
+        return;
+    } else if (effects.includes('light')) {
+        textColor = [180, 180, 180]; // Light gray
+    }
+    
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    
+    // Apply position effects
+    let adjustedY = y;
+    if (effects.includes('uneven-up')) {
+        adjustedY -= 0.5;
+    } else if (effects.includes('uneven-down')) {
+        adjustedY += 0.5;
+    }
+    
+    // Render the character
+    doc.text(char, x, adjustedY);
+    
+    // Reset color to black for next character
+    doc.setTextColor(0, 0, 0);
 }
