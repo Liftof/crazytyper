@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug jsPDF</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>Debug jsPDF</h1>
+    <button onclick="testPDF()">Test PDF</button>
+    <div id="output"></div>
+
+    <script>
+        function log(msg) {
+            document.getElementById('output').innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + msg + '</div>';
+            console.log(msg);
+        }
+
+        window.onload = function() {
+            log('Page loaded');
+            
+            setTimeout(() => {
+                log('Testing jsPDF...');
+                
+                if (typeof window.jspdf !== 'undefined') {
+                    log('✅ window.jspdf found');
+                    log('jsPDF object: ' + Object.keys(window.jspdf));
+                    
+                    try {
+                        const { jsPDF } = window.jspdf;
+                        log('✅ jsPDF class extracted');
+                        
+                        const doc = new jsPDF();
+                        log('✅ jsPDF instance created');
+                        
+                        doc.text('Hello World', 10, 10);
+                        log('✅ Text added to PDF');
+                        
+                        // Test save (should not actually download in test)
+                        log('PDF ready - test complete');
+                        
+                    } catch (error) {
+                        log('❌ Error: ' + error.message);
+                        log('❌ Stack: ' + error.stack);
+                    }
+                } else {
+                    log('❌ window.jspdf not found');
+                    log('Available globals: ' + Object.keys(window).filter(k => k.toLowerCase().includes('pdf')));
+                }
+            }, 1000);
+        };
+
+        function testPDF() {
+            log('Manual PDF test triggered...');
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text('Manual test PDF', 10, 10);
+                doc.save('test.pdf');
+                log('✅ PDF download triggered');
+            } catch (error) {
+                log('❌ Manual test error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

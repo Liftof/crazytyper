@@ -215,7 +215,8 @@
                 <div class="output-controls">
                     <button id="copyBtn" class="brutal-button secondary">📋 COPY</button>
                     <button id="printBtn" class="brutal-button secondary">🖨️ PRINT</button>
-                    <button id="pdfBtn" class="brutal-button secondary">📄 PDF</button>
+                    <button id="pdfBtn" class="brutal-button secondary">📄 QUICK PDF</button>
+                    <button id="pdfConfigBtn" class="brutal-button secondary">⚙️ PDF OPTIONS</button>
                     <button id="regenerateBtn" class="brutal-button secondary">🔄 REGENERATE</button>
                 </div>
                 
@@ -235,6 +236,106 @@
     <footer class="footer">
         <p>Fait avec <span class="heart">❤️</span> par <a href="https://pierrebaptiste.me" target="_blank" rel="noopener">Pierre-Baptiste Borges</a></p>
     </footer>
+
+    <!-- PDF Configuration Modal -->
+    <div id="pdfConfigModal" class="pdf-modal hidden">
+        <div class="pdf-modal-content">
+            <div class="pdf-modal-header">
+                <h2 class="brutal-title" style="font-size: 1.5rem;">⚙️ PDF CONFIGURATION</h2>
+                <button id="closePdfModal" class="pdf-close-btn">✕</button>
+            </div>
+            
+            <div class="pdf-config-sections">
+                <div class="pdf-config-section">
+                    <h3 class="brutal-label">📏 MARGINS (mm)</h3>
+                    <div class="margin-controls">
+                        <div class="margin-group">
+                            <label class="brutal-label">Top</label>
+                            <input type="number" id="marginTop" class="brutal-input" value="20" min="0" max="50" step="5">
+                        </div>
+                        <div class="margin-group">
+                            <label class="brutal-label">Bottom</label>
+                            <input type="number" id="marginBottom" class="brutal-input" value="20" min="0" max="50" step="5">
+                        </div>
+                        <div class="margin-group">
+                            <label class="brutal-label">Left</label>
+                            <input type="number" id="marginLeft" class="brutal-input" value="20" min="0" max="50" step="5">
+                        </div>
+                        <div class="margin-group">
+                            <label class="brutal-label">Right</label>
+                            <input type="number" id="marginRight" class="brutal-input" value="20" min="0" max="50" step="5">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pdf-config-section">
+                    <h3 class="brutal-label">📄 CONTENT OPTIONS</h3>
+                    <div class="content-options">
+                        <div class="option-group">
+                            <label class="brutal-checkbox">
+                                <input type="checkbox" id="showHeader" checked>
+                                <span class="checkmark"></span>
+                                Show Header (Title & Font Info)
+                            </label>
+                        </div>
+                        <div class="option-group">
+                            <label class="brutal-checkbox">
+                                <input type="checkbox" id="showFooter" checked>
+                                <span class="checkmark"></span>
+                                Show Footer (Page Numbers)
+                            </label>
+                        </div>
+                        <div class="option-group">
+                            <label class="brutal-checkbox">
+                                <input type="checkbox" id="showBranding">
+                                <span class="checkmark"></span>
+                                Show CrazyTyper Branding
+                            </label>
+                        </div>
+                        <div class="option-group">
+                            <label class="brutal-checkbox">
+                                <input type="checkbox" id="showSeparatorLine" checked>
+                                <span class="checkmark"></span>
+                                Header Separator Line
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pdf-config-section">
+                    <h3 class="brutal-label">📝 FORMATTING</h3>
+                    <div class="format-options">
+                        <div class="option-group">
+                            <label class="brutal-label">Font Size</label>
+                            <select id="fontSize" class="brutal-select">
+                                <option value="9">9pt (Small)</option>
+                                <option value="10">10pt (Compact)</option>
+                                <option value="11" selected>11pt (Default)</option>
+                                <option value="12">12pt (Large)</option>
+                                <option value="14">14pt (Extra Large)</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label class="brutal-label">Line Height</label>
+                            <select id="lineHeight" class="brutal-select">
+                                <option value="1.2">Tight (1.2)</option>
+                                <option value="1.4">Compact (1.4)</option>
+                                <option value="1.6" selected>Default (1.6)</option>
+                                <option value="1.8">Relaxed (1.8)</option>
+                                <option value="2.0">Loose (2.0)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pdf-modal-footer">
+                <button id="cancelPdfConfig" class="brutal-button secondary">❌ CANCEL</button>
+                <button id="resetPdfConfig" class="brutal-button secondary">🔄 RESET</button>
+                <button id="generateCustomPdf" class="brutal-button primary">📄 GENERATE PDF</button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

@@ -101,6 +101,7 @@ transformForm.addEventListener('submit', handleTransformSubmit);
 copyBtn.addEventListener('click', copyToClipboard);
 printBtn.addEventListener('click', printDocument);
 pdfBtn.addEventListener('click', exportToPDF);
+document.getElementById('pdfConfigBtn').addEventListener('click', openPdfConfigModal);
 regenerateBtn.addEventListener('click', regenerateText);
 
 // Tab switching
@@ -492,7 +493,7 @@ function printDocument() {
     }, 100);
 }
 
-function exportToPDF() {
+function exportToPDF(customConfig = null) {
     const outputElement = document.querySelector('.typewriter-output');
     
     if (!outputElement || !outputElement.textContent.trim()) {
@@ -500,8 +501,23 @@ function exportToPDF() {
         return;
     }
     
+    // Default configuration
+    const defaultConfig = {
+        margins: { top: 20, bottom: 20, left: 20, right: 20 },
+        showHeader: true,
+        showFooter: true,
+        showBranding: false,
+        showSeparatorLine: true,
+        fontSize: 11,
+        lineHeight: 1.6
+    };
+    
+    // Use custom config if provided, otherwise use default
+    const config = customConfig || defaultConfig;
+    
     // Show loading message
-    showTemporaryMessage(pdfBtn, 'Generating PDF...');
+    const loadingBtn = customConfig ? document.getElementById('generateCustomPdf') : pdfBtn;
+    showTemporaryMessage(loadingBtn, 'Generating PDF...');
     
     // Get the clean text content (remove HTML formatting for PDF)
     const textContent = outputElement.innerText || outputElement.textContent;
@@ -579,25 +595,37 @@ function exportToPDF() {
         
         // Set font
         doc.setFont(pdfFont);
-        doc.setFontSize(11);
+        doc.setFontSize(config.fontSize);
         
-        // Add title/header
-        doc.setFontSize(14);
-        doc.text('CrazyTyper Document', 20, 20);
-        doc.setFontSize(8);
-        doc.text(`Font: ${fontName}`, 20, 27);
-        doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 32);
+        // Calculate page dimensions with custom margins
+        const pageWidth = 210; // A4 width
+        const pageHeight = 297; // A4 height
+        const contentWidth = pageWidth - config.margins.left - config.margins.right;
+        const lineHeight = config.fontSize * config.lineHeight * 0.35; // Convert to mm
         
-        // Add separator line
-        doc.line(20, 35, 190, 35);
+        let currentY = config.margins.top;
+        
+        // Add header if enabled
+        if (config.showHeader) {
+            doc.setFontSize(14);
+            doc.text('CrazyTyper Document', config.margins.left, currentY);
+            currentY += 10;
+            
+            doc.setFontSize(8);
+            doc.text(`Font: ${fontName}`, config.margins.left, currentY);
+            currentY += 5;
+            doc.text(`Generated: ${new Date().toLocaleString()}`, config.margins.left, currentY);
+            currentY += 8;
+            
+            // Add separator line if enabled
+            if (config.showSeparatorLine) {
+                doc.line(config.margins.left, currentY, pageWidth - config.margins.right, currentY);
+                currentY += 8;
+            }
+        }
         
         // Reset font size for content
-        doc.setFontSize(11);
-        
-        // Split text into lines that fit the page width
-        const pageWidth = 190 - 40; // A4 width minus margins
-        const lineHeight = 6;
-        let currentY = 45;
+        doc.setFontSize(config.fontSize);
         
         // Split text by paragraphs first
         const paragraphs = textContent.split(/\n\s*\n/);
@@ -605,16 +633,16 @@ function exportToPDF() {
         paragraphs.forEach((paragraph, pIndex) => {
             if (paragraph.trim()) {
                 // Split paragraph into lines that fit
-                const lines = doc.splitTextToSize(paragraph.trim(), pageWidth);
+                const lines = doc.splitTextToSize(paragraph.trim(), contentWidth);
                 
                 lines.forEach((line, lIndex) => {
-                    // Check if we need a new page
-                    if (currentY > 280) { // Close to bottom of A4
+                    // Check if we need a new page (accounting for bottom margin)
+                    if (currentY > pageHeight - config.margins.bottom - lineHeight) {
                         doc.addPage();
-                        currentY = 20;
+                        currentY = config.margins.top;
                     }
                     
-                    doc.text(line, 20, currentY);
+                    doc.text(line, config.margins.left, currentY);
                     currentY += lineHeight;
                 });
                 
@@ -625,12 +653,28 @@ function exportToPDF() {
             }
         });
         
-        // Add footer
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.text(`Page ${i} of ${pageCount} - Generated with CrazyTyper`, 20, 290);
+        // Add footer if enabled
+        if (config.showFooter || config.showBranding) {
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                
+                const footerY = pageHeight - config.margins.bottom + 5;
+                
+                if (config.showFooter) {
+                    doc.text(`Page ${i} of ${pageCount}`, config.margins.left, footerY);
+                }
+                
+                if (config.showBranding) {
+                    const brandingText = 'Generated with CrazyTyper';
+                    if (config.showFooter) {
+                        doc.text(` - ${brandingText}`, config.margins.left + 40, footerY);
+                    } else {
+                        doc.text(brandingText, config.margins.left, footerY);
+                    }
+                }
+            }
         }
         
         // Save the PDF
@@ -638,7 +682,7 @@ function exportToPDF() {
         doc.save(filename);
         
         // Show success message
-        showTemporaryMessage(pdfBtn, 'PDF Downloaded!');
+        showTemporaryMessage(loadingBtn, 'PDF Downloaded!');
         
     } catch (error) {
         console.error('Error generating PDF:', error);
@@ -651,7 +695,7 @@ function exportToPDF() {
                 'global jsPDF': typeof jsPDF
             }
         });
-        showTemporaryMessage(pdfBtn, 'PDF Error');
+        showTemporaryMessage(loadingBtn, 'PDF Error');
         alert('Error generating PDF: ' + error.message + '\nCheck console for details.');
     }
 }
@@ -850,4 +894,64 @@ function optimizeTextProcessing(text, level) {
             animationSpeed: 30 // Normal speed
         };
     }
+}
+
+// PDF CONFIGURATION MODAL FUNCTIONS
+function openPdfConfigModal() {
+    const modal = document.getElementById('pdfConfigModal');
+    modal.classList.remove('hidden');
+    
+    // Add event listeners
+    document.getElementById('closePdfModal').addEventListener('click', closePdfConfigModal);
+    document.getElementById('cancelPdfConfig').addEventListener('click', closePdfConfigModal);
+    document.getElementById('resetPdfConfig').addEventListener('click', resetPdfConfig);
+    document.getElementById('generateCustomPdf').addEventListener('click', generateCustomPDF);
+    
+    // Close modal on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closePdfConfigModal();
+        }
+    });
+}
+
+function closePdfConfigModal() {
+    const modal = document.getElementById('pdfConfigModal');
+    modal.classList.add('hidden');
+}
+
+function resetPdfConfig() {
+    document.getElementById('marginTop').value = 20;
+    document.getElementById('marginBottom').value = 20;
+    document.getElementById('marginLeft').value = 20;
+    document.getElementById('marginRight').value = 20;
+    document.getElementById('showHeader').checked = true;
+    document.getElementById('showFooter').checked = true;
+    document.getElementById('showBranding').checked = false;
+    document.getElementById('showSeparatorLine').checked = true;
+    document.getElementById('fontSize').value = '11';
+    document.getElementById('lineHeight').value = '1.6';
+}
+
+function getPdfConfig() {
+    return {
+        margins: {
+            top: parseInt(document.getElementById('marginTop').value) || 20,
+            bottom: parseInt(document.getElementById('marginBottom').value) || 20,
+            left: parseInt(document.getElementById('marginLeft').value) || 20,
+            right: parseInt(document.getElementById('marginRight').value) || 20
+        },
+        showHeader: document.getElementById('showHeader').checked,
+        showFooter: document.getElementById('showFooter').checked,
+        showBranding: document.getElementById('showBranding').checked,
+        showSeparatorLine: document.getElementById('showSeparatorLine').checked,
+        fontSize: parseInt(document.getElementById('fontSize').value) || 11,
+        lineHeight: parseFloat(document.getElementById('lineHeight').value) || 1.6
+    };
+}
+
+function generateCustomPDF() {
+    const config = getPdfConfig();
+    exportToPDF(config);
+    closePdfConfigModal();
 }

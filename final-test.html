@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Final CrazyTyper PDF Test</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
+    <style>
+        body { background: white; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 10px; }
+        #test-output { font-family: monospace; white-space: pre-line; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Final CrazyTyper PDF</h1>
+    
+    <div class="test-section">
+        <h2>1. Test basique jsPDF</h2>
+        <button onclick="testBasicPDF()">Test PDF Basique</button>
+        <div id="basic-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Test fonction exportToPDF</h2>
+        <button onclick="testExportFunction()">Test Export PDF</button>
+        <div id="export-result"></div>
+        
+        <!-- Éléments nécessaires pour CrazyTyper -->
+        <div id="outputSection" class="output-section">
+            <div class="typewriter-output brutal-typewriter" id="typewriterOutput">
+                Ceci est un texte de test pour CrazyTyper.
+                
+                Il contient plusieurs paragraphes avec des effets de machine à écrire.
+                
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            </div>
+        </div>
+        
+        <select id="fontSelect">
+            <option value="jmh-typewriter">JMH Typewriter</option>
+        </select>
+        
+        <div class="tab-btn active" data-tab="generate"></div>
+        
+        <button id="pdfBtn" onclick="testCrazyTyperExport()">Test CrazyTyper Export</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Console Output</h2>
+        <div id="test-output"></div>
+    </div>
+
+    <script>
+        // Capture console output
+        const output = document.getElementById('test-output');
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog(...args);
+            output.textContent += new Date().toLocaleTimeString() + ' LOG: ' + args.join(' ') + '\\n';
+        };
+        
+        console.error = function(...args) {
+            originalError(...args);
+            output.textContent += new Date().toLocaleTimeString() + ' ERROR: ' + args.join(' ') + '\\n';
+        };
+
+        function testBasicPDF() {
+            const result = document.getElementById('basic-result');
+            try {
+                console.log('Testing basic PDF...');
+                
+                let jsPDFClass = null;
+                if (window.jspdf && window.jspdf.jsPDF) {
+                    jsPDFClass = window.jspdf.jsPDF;
+                } else if (window.jsPDF) {
+                    jsPDFClass = window.jsPDF;
+                }
+                
+                const doc = new jsPDFClass();
+                doc.text('Basic PDF Test', 10, 10);
+                doc.save('basic-test.pdf');
+                
+                result.innerHTML = '✅ PDF généré avec succès';
+                console.log('Basic PDF test successful');
+                
+            } catch (error) {
+                result.innerHTML = '❌ Erreur: ' + error.message;
+                console.error('Basic PDF test failed:', error);
+            }
+        }
+        
+        function testCrazyTyperExport() {
+            console.log('Testing CrazyTyper export function...');
+            try {
+                if (typeof exportToPDF === 'function') {
+                    exportToPDF();
+                    console.log('CrazyTyper export completed');
+                } else {
+                    console.error('exportToPDF function not found');
+                }
+            } catch (error) {
+                console.error('CrazyTyper export failed:', error);
+            }
+        }
+        
+        function testExportFunction() {
+            const result = document.getElementById('export-result');
+            console.log('Testing export function...');
+            
+            // Set up DOM elements
+            document.getElementById('outputSection').classList.remove('hidden');
+            
+            try {
+                testCrazyTyperExport();
+                result.innerHTML = '✅ Export fonction executée';
+            } catch (error) {
+                result.innerHTML = '❌ Erreur export: ' + error.message;
+            }
+        }
+        
+        // Test on load
+        window.onload = function() {
+            console.log('Page loaded, testing jsPDF availability...');
+            console.log('window.jspdf:', typeof window.jspdf);
+            console.log('exportToPDF function:', typeof exportToPDF);
+            
+            if (window.jspdf) {
+                console.log('jsPDF keys:', Object.keys(window.jspdf));
+            }
+        };
+    </script>
+</body>
+</html>

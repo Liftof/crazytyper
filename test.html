@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrazyTyper PDF Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f0f0f0; }
+        .test-results { background: white; padding: 20px; border-radius: 8px; margin: 10px 0; }
+        .log { margin: 5px 0; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        #test-frame { width: 100%; height: 600px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Tests automatiques CrazyTyper PDF</h1>
+    
+    <div class="test-results">
+        <h2>📋 Résultats des tests:</h2>
+        <div id="test-logs">
+            <div class="log info">⏳ Chargement des tests...</div>
+        </div>
+    </div>
+
+    <div class="test-results">
+        <h2>🖼️ Application en cours de test:</h2>
+        <iframe id="test-frame" src="http://localhost:8080"></iframe>
+    </div>
+
+    <script>
+        const logs = document.getElementById('test-logs');
+        
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            logs.appendChild(div);
+            console.log(message);
+        }
+
+        // Écouter les messages de l'iframe
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'test-log') {
+                addLog(event.data.message, event.data.level || 'info');
+            }
+        });
+
+        // Attendre que l'iframe se charge et injecter les tests
+        document.getElementById('test-frame').onload = function() {
+            addLog('📱 Application chargée', 'success');
+            
+            setTimeout(() => {
+                try {
+                    const iframe = document.getElementById('test-frame');
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    
+                    // Injecter le script de test
+                    const script = iframeDoc.createElement('script');
+                    script.textContent = `
+                        console.log('🧪 Tests PDF injectés');
+                        
+                        // Override console pour envoyer les logs au parent
+                        const originalLog = console.log;
+                        const originalError = console.error;
+                        
+                        console.log = function(...args) {
+                            originalLog(...args);
+                            window.parent.postMessage({
+                                type: 'test-log',
+                                message: args.join(' '),
+                                level: 'success'
+                            }, '*');
+                        };
+                        
+                        console.error = function(...args) {
+                            originalError(...args);
+                            window.parent.postMessage({
+                                type: 'test-log', 
+                                message: args.join(' '),
+                                level: 'error'
+                            }, '*');
+                        };
+                        
+                        // Tests
+                        setTimeout(() => {
+                            console.log('🔍 Test 1: Vérification jsPDF');
+                            if (typeof window.jspdf !== 'undefined') {
+                                console.log('✅ jsPDF trouvé');
+                                
+                                // Test création PDF simple
+                                try {
+                                    const { jsPDF } = window.jspdf;
+                                    const doc = new jsPDF();
+                                    doc.text('Test PDF', 10, 10);
+                                    console.log('✅ Instance jsPDF créée avec succès');
+                                    
+                                    // Test avec texte dans l'output
+                                    const output = document.querySelector('.typewriter-output');
+                                    if (output) {
+                                        output.innerHTML = 'Test de génération PDF avec CrazyTyper';
+                                        document.getElementById('outputSection').classList.remove('hidden');
+                                        console.log('✅ Texte test ajouté');
+                                        
+                                        // Test export complet
+                                        setTimeout(() => {
+                                            try {
+                                                if (typeof exportToPDF === 'function') {
+                                                    console.log('✅ Fonction exportToPDF trouvée');
+                                                    console.log('🎯 Test export PDF...');
+                                                    exportToPDF();
+                                                    console.log('✅ Export PDF terminé sans erreur');
+                                                } else {
+                                                    console.error('❌ Fonction exportToPDF non trouvée');
+                                                }
+                                            } catch (error) {
+                                                console.error('❌ Erreur export:', error.message);
+                                            }
+                                        }, 500);
+                                        
+                                    } else {
+                                        console.error('❌ Element output non trouvé');
+                                    }
+                                    
+                                } catch (error) {
+                                    console.error('❌ Erreur création jsPDF:', error.message);
+                                }
+                                
+                            } else {
+                                console.error('❌ jsPDF non chargé');
+                            }
+                        }, 1000);
+                    `;
+                    
+                    iframeDoc.head.appendChild(script);
+                    addLog('🔧 Tests injectés dans l\'application', 'info');
+                    
+                } catch (error) {
+                    addLog('❌ Erreur injection tests: ' + error.message, 'error');
+                }
+            }, 2000);
+        };
+        
+        addLog('🚀 Test harness initialisé', 'info');
+    </script>
+</body>
+</html>

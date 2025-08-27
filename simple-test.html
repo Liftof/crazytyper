@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <button onclick="downloadPDF()">Download Test PDF</button>
+    
+    <script>
+        function downloadPDF() {
+            try {
+                console.log('Testing PDF generation...');
+                
+                // Check multiple ways to access jsPDF
+                let jsPDFClass = null;
+                
+                if (window.jspdf && window.jspdf.jsPDF) {
+                    jsPDFClass = window.jspdf.jsPDF;
+                    console.log('Using window.jspdf.jsPDF');
+                } else if (window.jsPDF) {
+                    jsPDFClass = window.jsPDF;
+                    console.log('Using window.jsPDF');
+                } else if (typeof jsPDF !== 'undefined') {
+                    jsPDFClass = jsPDF;
+                    console.log('Using global jsPDF');
+                } else {
+                    console.error('jsPDF not found!');
+                    alert('jsPDF not loaded');
+                    return;
+                }
+                
+                const doc = new jsPDFClass();
+                doc.text('Hello from CrazyTyper Test!', 10, 10);
+                doc.text('This is a test PDF with typewriter content.', 10, 20);
+                doc.save('crazytyper-test.pdf');
+                
+                console.log('PDF generated successfully!');
+                alert('PDF downloaded!');
+                
+            } catch (error) {
+                console.error('PDF Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Test on load
+        window.onload = function() {
+            setTimeout(() => {
+                console.log('Checking jsPDF availability...');
+                console.log('window.jspdf:', typeof window.jspdf);
+                console.log('window.jsPDF:', typeof window.jsPDF);
+                console.log('global jsPDF:', typeof jsPDF);
+                
+                if (window.jspdf) {
+                    console.log('window.jspdf contents:', Object.keys(window.jspdf));
+                }
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
