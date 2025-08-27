@@ -493,7 +493,7 @@ function printDocument() {
     }, 100);
 }
 
-function exportToPDF(customConfig = null) {
+async function exportToPDF(customConfig = null) {
     const outputElement = document.querySelector('.typewriter-output');
     
     if (!outputElement || !outputElement.textContent.trim()) {
@@ -512,8 +512,16 @@ function exportToPDF(customConfig = null) {
         lineHeight: 1.6
     };
     
-    // Use custom config if provided, otherwise use default
-    const config = customConfig || defaultConfig;
+    // Use custom config if provided, otherwise use default - ensure margins exist
+    const config = customConfig ? {
+        margins: customConfig.margins || defaultConfig.margins,
+        showHeader: customConfig.showHeader !== undefined ? customConfig.showHeader : defaultConfig.showHeader,
+        showFooter: customConfig.showFooter !== undefined ? customConfig.showFooter : defaultConfig.showFooter,
+        showBranding: customConfig.showBranding !== undefined ? customConfig.showBranding : defaultConfig.showBranding,
+        showSeparatorLine: customConfig.showSeparatorLine !== undefined ? customConfig.showSeparatorLine : defaultConfig.showSeparatorLine,
+        fontSize: customConfig.fontSize || defaultConfig.fontSize,
+        lineHeight: customConfig.lineHeight || defaultConfig.lineHeight
+    } : defaultConfig;
     
     // Show loading message
     const loadingBtn = customConfig ? document.getElementById('generateCustomPdf') : pdfBtn;
@@ -532,6 +540,7 @@ function exportToPDF(customConfig = null) {
     // Determine which font to use in PDF
     let pdfFont = 'courier'; // default jsPDF font
     let fontName = 'Courier New';
+    let customFontData = null;
     
     // Map our font selections to jsPDF compatible fonts
     const fontMap = {
@@ -573,6 +582,16 @@ function exportToPDF(customConfig = null) {
         fontName = fontMap[selectedFont].name;
     }
     
+    // Try to load custom typewriter font for embedding
+    if (selectedFont.includes('jmh-') || selectedFont.includes('elegant-') || 
+        selectedFont.includes('tt2020') || selectedFont.includes('tox-') || 
+        selectedFont.includes('traveling-') || selectedFont.includes('gabriele-')) {
+        customFontData = await loadFontForPDF(selectedFont);
+        if (customFontData) {
+            fontName = customFontData.name;
+        }
+    }
+    
     try {
         // Create new jsPDF instance - handle different ways jsPDF might be exposed
         let jsPDFClass = null;
@@ -593,8 +612,20 @@ function exportToPDF(customConfig = null) {
             format: 'a4'
         });
         
-        // Set font
-        doc.setFont(pdfFont);
+        // Add and set custom font if available
+        if (customFontData) {
+            try {
+                doc.addFileToVFS(customFontData.filename, customFontData.base64);
+                doc.addFont(customFontData.filename, customFontData.fontName, 'normal');
+                doc.setFont(customFontData.fontName);
+                console.log('✅ Custom font embedded:', customFontData.fontName);
+            } catch (error) {
+                console.warn('Failed to embed custom font, using fallback:', error);
+                doc.setFont(pdfFont);
+            }
+        } else {
+            doc.setFont(pdfFont);
+        }
         doc.setFontSize(config.fontSize);
         
         // Calculate page dimensions with custom margins
@@ -956,8 +987,73 @@ function getPdfConfig() {
     };
 }
 
-function generateCustomPDF() {
+async function generateCustomPDF() {
     const config = getPdfConfig();
-    exportToPDF(config);
+    await exportToPDF(config);
     closePdfConfigModal();
+}
+
+// Font loading for PDF embedding
+async function loadFontForPDF(selectedFont) {
+    const fontMapping = {
+        'jmh-typewriter': 'JMH Typewriter mono.ttf',
+        'jmh-typewriter-black': 'JMH Typewriter mono Black.ttf',
+        'jmh-typewriter-fine': 'JMH Typewriter mono Fine.ttf',
+        'jmh-typewriter-cross': 'JMH Typewriter mono Cross.ttf',
+        'jmh-typewriter-over': 'JMH Typewriter mono Over.ttf',
+        'jmh-typewriter-under': 'JMH Typewriter mono Under.ttf',
+        'jmh-typewriter-black-cross': 'JMH Typewriter mono Black Cross.ttf',
+        'jmh-typewriter-black-over': 'JMH Typewriter mono Black Over.ttf',
+        'jmh-typewriter-black-under': 'JMH Typewriter mono Black Under.ttf',
+        'jmh-typewriter-fine-cross': 'JMH Typewriter mono Fine Cross.ttf',
+        'jmh-typewriter-fine-over': 'JMH Typewriter mono Fine Over.ttf',
+        'jmh-typewriter-fine-under': 'JMH Typewriter mono Fine Under.ttf',
+        'jmh-typewriter-bold-cross': 'JMH Typewriter mono Bold Cross.ttf',
+        'jmh-typewriter-bold-over': 'JMH Typewriter mono Bold Over.ttf',
+        'jmh-typewriter-bold-under': 'JMH Typewriter mono Bold Under.ttf',
+        'elegant-typewriter': 'ELEGANT TYPEWRITER Light.ttf',
+        'tt2020-base': 'TT2020Base-Regular.ttf',
+        'tt2020-style-g': 'TT2020StyleG-Regular-ASCII.ttf',
+        'tox-typewriter': 'Tox Typewriter.ttf',
+        'traveling-typewriter': 'TravelingTypewriter.ttf',
+        'gabriele-bad': 'gabriele-bad.ttf'
+    };
+    
+    const fontFilename = fontMapping[selectedFont];
+    if (!fontFilename) {
+        console.warn('Font mapping not found for:', selectedFont);
+        return null;
+    }
+    
+    try {
+        console.log('🔄 Loading font for PDF:', fontFilename);
+        const response = await fetch(`./fonts/${fontFilename}`);
+        if (!response.ok) {
+            throw new Error(`Font file not found: ${fontFilename}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // Convert to base64 in chunks to avoid memory issues
+        let base64 = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+            const chunk = uint8Array.subarray(i, i + chunkSize);
+            base64 += String.fromCharCode.apply(null, chunk);
+        }
+        const base64Font = btoa(base64);
+        
+        console.log('✅ Font loaded and converted to base64:', fontFilename);
+        
+        return {
+            filename: fontFilename,
+            fontName: selectedFont.replace(/-/g, '_'), // jsPDF font names can't have dashes
+            base64: base64Font,
+            name: fontFilename.replace('.ttf', '')
+        };
+    } catch (error) {
+        console.error('❌ Failed to load font:', fontFilename, error);
+        return null;
+    }
 }
