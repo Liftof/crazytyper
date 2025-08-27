@@ -45,7 +45,7 @@ const imperfectionTypes = {
         stuckKeyChance: 0.002
     },
     medium: {
-        typoChance: 0.01,
+        typoChance: 0.001, // Very minimal typos (same as minimal setting)
         fadedChance: 0.04,
         heavyChance: 0.025,
         unevenChance: 0.03,
