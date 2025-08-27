@@ -1,3 +1,183 @@
+/* Custom Typewriter Fonts */
+@font-face {
+    font-family: 'JMH Typewriter';
+    src: url('./fonts/JMH Typewriter mono.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter';
+    src: url('./fonts/JMH Typewriter mono Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter';
+    src: url('./fonts/JMH Typewriter mono Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter';
+    src: url('./fonts/JMH Typewriter mono Bold Italic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Black';
+    src: url('./fonts/JMH Typewriter mono Black.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Fine';
+    src: url('./fonts/JMH Typewriter mono Fine.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Elegant Typewriter';
+    src: url('./fonts/ELEGANT TYPEWRITER Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'TT2020 Base';
+    src: url('./fonts/TT2020Base-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'TT2020 Base';
+    src: url('./fonts/TT2020Base-Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'TT2020 Style G';
+    src: url('./fonts/TT2020StyleG-Regular-ASCII.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Tox Typewriter';
+    src: url('./fonts/Tox Typewriter.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Traveling Typewriter';
+    src: url('./fonts/TravelingTypewriter.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Gabriele Bad';
+    src: url('./fonts/gabriele-bad.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* JMH Typewriter Special Effects */
+@font-face {
+    font-family: 'JMH Typewriter Cross';
+    src: url('./fonts/JMH Typewriter mono Cross.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Over';
+    src: url('./fonts/JMH Typewriter mono Over.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Under';
+    src: url('./fonts/JMH Typewriter mono Under.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* JMH Typewriter Black Effects */
+@font-face {
+    font-family: 'JMH Typewriter Black Cross';
+    src: url('./fonts/JMH Typewriter mono Black Cross.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Black Over';
+    src: url('./fonts/JMH Typewriter mono Black Over.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Black Under';
+    src: url('./fonts/JMH Typewriter mono Black Under.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+/* JMH Typewriter Fine Effects */
+@font-face {
+    font-family: 'JMH Typewriter Fine Cross';
+    src: url('./fonts/JMH Typewriter mono Fine Cross.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Fine Over';
+    src: url('./fonts/JMH Typewriter mono Fine Over.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Fine Under';
+    src: url('./fonts/JMH Typewriter mono Fine Under.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+}
+
+/* JMH Typewriter Bold Effects */
+@font-face {
+    font-family: 'JMH Typewriter Bold Cross';
+    src: url('./fonts/JMH Typewriter mono Bold Cross.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Bold Over';
+    src: url('./fonts/JMH Typewriter mono Bold Over.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'JMH Typewriter Bold Under';
+    src: url('./fonts/JMH Typewriter mono Bold Under.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -376,6 +556,104 @@ body {
 
 .font-ibm-plex-mono {
     font-family: 'IBM Plex Mono', monospace;
+}
+
+/* New Typewriter Font Classes */
+.font-jmh-typewriter {
+    font-family: 'JMH Typewriter', monospace;
+}
+
+.font-jmh-typewriter-black {
+    font-family: 'JMH Typewriter Black', monospace;
+    font-weight: 900;
+}
+
+.font-jmh-typewriter-fine {
+    font-family: 'JMH Typewriter Fine', monospace;
+    font-weight: 200;
+}
+
+.font-elegant-typewriter {
+    font-family: 'Elegant Typewriter', monospace;
+    font-weight: 300;
+}
+
+.font-tt2020-base {
+    font-family: 'TT2020 Base', monospace;
+}
+
+.font-tt2020-style-g {
+    font-family: 'TT2020 Style G', monospace;
+}
+
+.font-tox-typewriter {
+    font-family: 'Tox Typewriter', monospace;
+}
+
+.font-traveling-typewriter {
+    font-family: 'Traveling Typewriter', monospace;
+}
+
+.font-gabriele-bad {
+    font-family: 'Gabriele Bad', monospace;
+}
+
+/* JMH Typewriter Effect Variants */
+.font-jmh-typewriter-cross {
+    font-family: 'JMH Typewriter Cross', monospace;
+}
+
+.font-jmh-typewriter-over {
+    font-family: 'JMH Typewriter Over', monospace;
+}
+
+.font-jmh-typewriter-under {
+    font-family: 'JMH Typewriter Under', monospace;
+}
+
+.font-jmh-typewriter-black-cross {
+    font-family: 'JMH Typewriter Black Cross', monospace;
+    font-weight: 900;
+}
+
+.font-jmh-typewriter-black-over {
+    font-family: 'JMH Typewriter Black Over', monospace;
+    font-weight: 900;
+}
+
+.font-jmh-typewriter-black-under {
+    font-family: 'JMH Typewriter Black Under', monospace;
+    font-weight: 900;
+}
+
+.font-jmh-typewriter-fine-cross {
+    font-family: 'JMH Typewriter Fine Cross', monospace;
+    font-weight: 200;
+}
+
+.font-jmh-typewriter-fine-over {
+    font-family: 'JMH Typewriter Fine Over', monospace;
+    font-weight: 200;
+}
+
+.font-jmh-typewriter-fine-under {
+    font-family: 'JMH Typewriter Fine Under', monospace;
+    font-weight: 200;
+}
+
+.font-jmh-typewriter-bold-cross {
+    font-family: 'JMH Typewriter Bold Cross', monospace;
+    font-weight: bold;
+}
+
+.font-jmh-typewriter-bold-over {
+    font-family: 'JMH Typewriter Bold Over', monospace;
+    font-weight: bold;
+}
+
+.font-jmh-typewriter-bold-under {
+    font-family: 'JMH Typewriter Bold Under', monospace;
+    font-weight: bold;
 }
 
 /* Typewriter imperfections */
