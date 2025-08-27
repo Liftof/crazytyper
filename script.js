@@ -500,269 +500,140 @@ function exportToPDF() {
         return;
     }
     
-    // Detect current tab and mode to check for custom font
+    // Show loading message
+    showTemporaryMessage(pdfBtn, 'Generating PDF...');
+    
+    // Get the clean text content (remove HTML formatting for PDF)
+    const textContent = outputElement.innerText || outputElement.textContent;
+    
+    // Get current font selection
     const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+    const fontSelect = activeTab === 'generate' 
+        ? document.getElementById('fontSelect') 
+        : document.getElementById('fontSelectTransform');
+    const selectedFont = fontSelect.value;
     
-    // Check both activeTab and font-custom class to determine if custom font is used
-    let currentFont = null;
-    let currentMode = null;
+    // Determine which font to use in PDF
+    let pdfFont = 'courier'; // default jsPDF font
+    let fontName = 'Courier New';
     
-    // First, check if the output element has font-custom class
-    if (outputElement.classList.contains('font-custom')) {
-        // Try to find which mode has a custom font loaded
-        if (customFonts['generate'] && activeTab === 'generate') {
-            currentFont = customFonts['generate'];
-            currentMode = 'generate';
-        } else if (customFonts['transform'] && activeTab === 'transform') {
-            currentFont = customFonts['transform'];
-            currentMode = 'transform';
-        }
+    // Map our font selections to jsPDF compatible fonts
+    const fontMap = {
+        'courier-prime': { font: 'courier', name: 'Courier Prime' },
+        'space-mono': { font: 'courier', name: 'Space Mono (Courier fallback)' },
+        'jetbrains-mono': { font: 'courier', name: 'JetBrains Mono (Courier fallback)' },
+        'source-code-pro': { font: 'courier', name: 'Source Code Pro (Courier fallback)' },
+        'ibm-plex-mono': { font: 'courier', name: 'IBM Plex Mono (Courier fallback)' },
+        // Typewriter fonts - use courier as base
+        'jmh-typewriter': { font: 'courier', name: 'JMH Typewriter (Courier base)' },
+        'jmh-typewriter-black': { font: 'courier', name: 'JMH Typewriter Black (Courier base)' },
+        'jmh-typewriter-fine': { font: 'courier', name: 'JMH Typewriter Fine (Courier base)' },
+        'elegant-typewriter': { font: 'courier', name: 'Elegant Typewriter (Courier base)' },
+        'tt2020-base': { font: 'courier', name: 'TT2020 Base (Courier base)' },
+        'tt2020-style-g': { font: 'courier', name: 'TT2020 Style G (Courier base)' },
+        'tox-typewriter': { font: 'courier', name: 'Tox Typewriter (Courier base)' },
+        'traveling-typewriter': { font: 'courier', name: 'Traveling Typewriter (Courier base)' },
+        'gabriele-bad': { font: 'courier', name: 'Gabriele Bad (Courier base)' },
+        // Effect variants - Basic
+        'jmh-typewriter-cross': { font: 'courier', name: 'JMH Cross Effect (Courier base)' },
+        'jmh-typewriter-over': { font: 'courier', name: 'JMH Over Effect (Courier base)' },
+        'jmh-typewriter-under': { font: 'courier', name: 'JMH Under Effect (Courier base)' },
+        // Black variants with effects
+        'jmh-typewriter-black-cross': { font: 'courier', name: 'JMH Black Cross (Courier base)' },
+        'jmh-typewriter-black-over': { font: 'courier', name: 'JMH Black Over (Courier base)' },
+        'jmh-typewriter-black-under': { font: 'courier', name: 'JMH Black Under (Courier base)' },
+        // Fine variants with effects
+        'jmh-typewriter-fine-cross': { font: 'courier', name: 'JMH Fine Cross (Courier base)' },
+        'jmh-typewriter-fine-over': { font: 'courier', name: 'JMH Fine Over (Courier base)' },
+        'jmh-typewriter-fine-under': { font: 'courier', name: 'JMH Fine Under (Courier base)' },
+        // Bold variants with effects
+        'jmh-typewriter-bold-cross': { font: 'courier', name: 'JMH Bold Cross (Courier base)' },
+        'jmh-typewriter-bold-over': { font: 'courier', name: 'JMH Bold Over (Courier base)' },
+        'jmh-typewriter-bold-under': { font: 'courier', name: 'JMH Bold Under (Courier base)' }
+    };
+    
+    if (fontMap[selectedFont]) {
+        pdfFont = fontMap[selectedFont].font;
+        fontName = fontMap[selectedFont].name;
     }
     
-    console.log('PDF Export Debug:', {
-        activeTab,
-        currentFont,
-        currentMode,
-        hasCustomClass: outputElement.classList.contains('font-custom'),
-        customFonts,
-        outputClasses: outputElement.className
-    });
-    
-    // Create a new window with clean content for PDF export
-    const printWindow = window.open('', '_blank');
-    const htmlContent = outputElement.innerHTML;
-    
-    // Generate custom font CSS if a custom font is being used
-    let customFontCSS = '';
-    if (currentFont && currentFont.data) {
-        try {
-            console.log('PDF: Processing custom font:', {
-                name: currentFont.name,
-                family: currentFont.family,
-                dataSize: currentFont.data.byteLength,
-                dataType: currentFont.data.constructor.name
-            });
-
-            // Better base64 conversion that handles large files
-            const uint8Array = new Uint8Array(currentFont.data);
-            let binaryString = '';
-            const chunkSize = 0x8000; // 32KB chunks to avoid call stack issues
-            
-            for (let i = 0; i < uint8Array.length; i += chunkSize) {
-                const chunk = uint8Array.subarray(i, i + chunkSize);
-                binaryString += String.fromCharCode.apply(null, chunk);
-            }
-            const base64Font = btoa(binaryString);
-            
-            // Better font format detection
-            let fontFormat = 'opentype'; // default
-            let mimeType = 'font/otf';
-            
-            const fileName = currentFont.name.toLowerCase();
-            if (fileName.endsWith('.woff2')) {
-                fontFormat = 'woff2';
-                mimeType = 'font/woff2';
-            } else if (fileName.endsWith('.woff')) {
-                fontFormat = 'woff';
-                mimeType = 'font/woff';
-            } else if (fileName.endsWith('.ttf')) {
-                fontFormat = 'truetype';
-                mimeType = 'font/ttf';
-            }
-            
-            console.log('PDF: Font format detected:', fontFormat, mimeType);
-            
-            customFontCSS = `
-                @font-face {
-                    font-family: 'CustomTypewriterFont';
-                    src: url('data:${mimeType};base64,${base64Font}') format('${fontFormat}');
-                    font-display: block;
-                    font-weight: normal;
-                    font-style: normal;
-                }
-                
-                * {
-                    font-family: 'CustomTypewriterFont', 'Courier New', monospace !important;
-                }
-                
-                body, .content, .font-custom {
-                    font-family: 'CustomTypewriterFont', 'Courier New', monospace !important;
-                }
-            `;
-            
-            console.log('PDF: Custom font CSS generated successfully');
-            console.log('PDF: Base64 size:', base64Font.length, 'characters');
+    try {
+        // Create new jsPDF instance
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
         
-            // Show user that custom font is being embedded
-            showTemporaryMessage(pdfBtn, 'Embedding custom font...');
-        } catch (error) {
-            console.error('Error generating custom font CSS:', error);
-            console.error('Font data details:', {
-                hasData: !!currentFont.data,
-                dataSize: currentFont.data?.byteLength,
-                dataType: currentFont.data?.constructor.name
-            });
-        }
-    } else {
-        console.log('PDF: No custom font detected, using default fonts');
-    }
-    
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>CrazyTyper Export</title>
-            <style>
-                ${customFontCSS}
-                
-                @page {
-                    size: A4;
-                    margin: 1in 1.25in;
-                }
-                
-                * {
-                    box-sizing: border-box;
-                    margin: 0;
-                    padding: 0;
-                }
-                
-                body {
-                    font-family: 'Courier New', monospace;
-                    font-size: 11pt;
-                    line-height: 1.6;
-                    color: #1a1a1a;
-                    background: white;
-                    -webkit-print-color-adjust: exact;
-                    color-adjust: exact;
-                }
-                
-                .content {
-                    white-space: pre-wrap;
-                    word-wrap: break-word;
-                    page-break-inside: avoid;
-                    orphans: 3;
-                    widows: 3;
-                    font-family: 'Courier New', monospace;
-                }
-                
-                /* Typewriter imperfections */
-                .char-faded {
-                    opacity: 0.7;
-                }
-                
-                .char-heavy {
-                    font-weight: bold;
-                    color: #1a252f;
-                }
-                
-                .char-light {
-                    opacity: 0.8;
-                    font-weight: 300;
-                }
-                
-                .char-uneven {
-                    position: relative;
-                    top: 1px;
-                }
-                
-                .char-uneven-down {
-                    position: relative;
-                    top: -1px;
-                }
-                
-                .char-spaced {
-                    margin-left: 1px;
-                }
-                
-                .char-tight {
-                    margin-left: -0.5px;
-                }
-                
-                @media print {
-                    body { 
-                        print-color-adjust: exact;
-                        -webkit-print-color-adjust: exact;
-                    }
-                    .char-faded { opacity: 0.7; }
-                    .char-heavy { 
-                        font-weight: bold; 
-                        color: #1a252f; 
-                    }
-                    .char-light { 
-                        opacity: 0.8; 
-                        font-weight: 300; 
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="content">${htmlContent}</div>
-        </body>
-        </html>
-    `);
-    
-    printWindow.document.close();
-    
-    // Wait for content and fonts to load, then trigger print dialog
-    setTimeout(() => {
-        printWindow.focus();
+        // Set font
+        doc.setFont(pdfFont);
+        doc.setFontSize(11);
         
-        // If custom font, wait a bit more for it to load and verify
-        if (currentFont && currentFont.data) {
-            console.log('PDF: Custom font detected, waiting for load...');
-            
-            // Try to detect when font is loaded in the new window
-            const checkFontLoad = () => {
-                try {
-                    const testElement = printWindow.document.querySelector('.content');
-                    const computedStyle = printWindow.getComputedStyle(testElement);
-                    console.log('PDF: Font family applied:', computedStyle.fontFamily);
+        // Add title/header
+        doc.setFontSize(14);
+        doc.text('CrazyTyper Document', 20, 20);
+        doc.setFontSize(8);
+        doc.text(`Font: ${fontName}`, 20, 27);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 32);
+        
+        // Add separator line
+        doc.line(20, 35, 190, 35);
+        
+        // Reset font size for content
+        doc.setFontSize(11);
+        
+        // Split text into lines that fit the page width
+        const pageWidth = 190 - 40; // A4 width minus margins
+        const lineHeight = 6;
+        let currentY = 45;
+        
+        // Split text by paragraphs first
+        const paragraphs = textContent.split(/\n\s*\n/);
+        
+        paragraphs.forEach((paragraph, pIndex) => {
+            if (paragraph.trim()) {
+                // Split paragraph into lines that fit
+                const lines = doc.splitTextToSize(paragraph.trim(), pageWidth);
+                
+                lines.forEach((line, lIndex) => {
+                    // Check if we need a new page
+                    if (currentY > 280) { // Close to bottom of A4
+                        doc.addPage();
+                        currentY = 20;
+                    }
                     
-                    // Also check if the font loaded properly
-                    printWindow.document.fonts.ready.then(() => {
-                        console.log('PDF: All fonts loaded in PDF window');
-                        console.log('PDF: Available fonts:', Array.from(printWindow.document.fonts).map(f => f.family));
-                        
-                        setTimeout(() => {
-                            console.log('PDF: Triggering print with custom font');
-                            printWindow.print();
-                            
-                            // Close the window after printing
-                            setTimeout(() => {
-                                printWindow.close();
-                            }, 1000);
-                        }, 500);
-                    }).catch(error => {
-                        console.error('PDF: Font loading error:', error);
-                        // Print anyway with fallback
-                        setTimeout(() => {
-                            printWindow.print();
-                            setTimeout(() => printWindow.close(), 1000);
-                        }, 500);
-                    });
-                } catch (error) {
-                    console.error('PDF: Error checking font load:', error);
-                    // Print anyway with fallback
-                    setTimeout(() => {
-                        printWindow.print();
-                        setTimeout(() => printWindow.close(), 1000);
-                    }, 500);
-                }
-            };
-            
-            setTimeout(checkFontLoad, 2000); // Extra time for custom fonts
-        } else {
-            console.log('PDF: No custom font, using standard delay');
-            setTimeout(() => {
-                printWindow.print();
+                    doc.text(line, 20, currentY);
+                    currentY += lineHeight;
+                });
                 
-                // Close the window after printing
-                setTimeout(() => {
-                    printWindow.close();
-                }, 1000);
-            }, 100);
+                // Add extra space between paragraphs
+                if (pIndex < paragraphs.length - 1) {
+                    currentY += lineHeight * 0.5;
+                }
+            }
+        });
+        
+        // Add footer
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(`Page ${i} of ${pageCount} - Generated with CrazyTyper`, 20, 290);
         }
-    }, 500);
+        
+        // Save the PDF
+        const filename = `crazytyper-${new Date().getTime()}.pdf`;
+        doc.save(filename);
+        
+        // Show success message
+        showTemporaryMessage(pdfBtn, 'PDF Downloaded!');
+        
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        showTemporaryMessage(pdfBtn, 'PDF Error');
+        alert('Error generating PDF. Please try again.');
+    }
 }
 
 function showTemporaryMessage(element, message) {
