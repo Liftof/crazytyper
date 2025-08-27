@@ -18,7 +18,7 @@ const errorSection = document.getElementById('errorSection');
 const errorMessage = document.getElementById('errorMessage');
 const copyBtn = document.getElementById('copyBtn');
 const printBtn = document.getElementById('printBtn');
-const pdfBtn = document.getElementById('pdfBtn');
+// PDF button removed - using pdfConfigBtn only
 const regenerateBtn = document.getElementById('regenerateBtn');
 
 // Tab elements
@@ -100,7 +100,6 @@ generateForm.addEventListener('submit', handleGenerateSubmit);
 transformForm.addEventListener('submit', handleTransformSubmit);
 copyBtn.addEventListener('click', copyToClipboard);
 printBtn.addEventListener('click', printDocument);
-pdfBtn.addEventListener('click', exportToPDF);
 document.getElementById('pdfConfigBtn').addEventListener('click', openPdfConfigModal);
 regenerateBtn.addEventListener('click', regenerateText);
 
@@ -524,7 +523,7 @@ async function exportToPDF(customConfig = null) {
     } : defaultConfig;
     
     // Show loading message
-    const loadingBtn = customConfig ? document.getElementById('generateCustomPdf') : pdfBtn;
+    const loadingBtn = document.getElementById('generateCustomPdf');
     showTemporaryMessage(loadingBtn, 'Generating PDF...');
     
     // Parse HTML content to preserve typewriter effects
@@ -704,8 +703,19 @@ async function exportToPDF(customConfig = null) {
                 'global jsPDF': typeof jsPDF
             }
         });
-        showTemporaryMessage(loadingBtn, 'PDF Error');
-        alert('Error generating PDF: ' + error.message + '\nCheck console for details.');
+        showTemporaryMessage(loadingBtn, 'PDF Error - Try Again');
+        console.error('PDF Generation Error:', error);
+        
+        let userMessage = 'Failed to generate PDF. ';
+        if (error.message.includes('jsPDF')) {
+            userMessage += 'PDF library not loaded properly. Please refresh the page and try again.';
+        } else if (error.message.includes('Font')) {
+            userMessage += 'Font loading failed. The PDF will use a default font.';
+        } else {
+            userMessage += 'Please try again or contact support if the problem persists.';
+        }
+        
+        showError(userMessage);
     }
 }
 
@@ -940,8 +950,8 @@ function resetPdfConfig() {
     document.getElementById('marginBottom').value = 20;
     document.getElementById('marginLeft').value = 20;
     document.getElementById('marginRight').value = 20;
-    document.getElementById('showHeader').checked = true;
-    document.getElementById('showFooter').checked = true;
+    document.getElementById('showHeader').checked = false;
+    document.getElementById('showFooter').checked = false;
     document.getElementById('showBranding').checked = false;
     document.getElementById('showSeparatorLine').checked = true;
     document.getElementById('fontSize').value = '11';
