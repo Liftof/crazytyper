@@ -506,30 +506,37 @@ async function exportAsImage() {
     showTemporaryMessage(imageBtn, 'Generating Image...');
 
     try {
-        // Create a clone of the output element for clean capture
+        // Create a clean clone of the output element
         const clone = outputElement.cloneNode(true);
         clone.style.padding = '40px';
-        clone.style.backgroundColor = '#ffffff';
+        clone.style.backgroundColor = 'transparent';
         clone.style.minHeight = 'auto';
         clone.style.maxWidth = '800px';
         clone.style.margin = '0';
+        clone.style.border = 'none !important';
+        clone.style.outline = 'none';
+        clone.style.boxShadow = 'none !important';
+        // Remove brutal styling classes
+        clone.classList.remove('brutal-typewriter');
         
         // Create a temporary container for the clone
         const container = document.createElement('div');
         container.style.position = 'absolute';
         container.style.left = '-9999px';
         container.style.top = '0';
+        container.style.backgroundColor = 'transparent';
+        container.style.border = 'none';
         container.appendChild(clone);
         document.body.appendChild(container);
 
-        // Capture the element as image
+        // Capture the element as image with transparent background
         const canvas = await html2canvas(clone, {
-            backgroundColor: '#ffffff',
+            backgroundColor: null, // Transparent background
             scale: 2, // Higher resolution
             useCORS: true,
             allowTaint: true,
-            height: clone.scrollHeight + 80, // Add padding
-            width: clone.scrollWidth + 80
+            logging: false,
+            removeContainer: true
         });
 
         // Clean up temporary element
@@ -611,28 +618,34 @@ async function exportToPDF(customConfig = null) {
         // Create a clean clone of the output for image capture
         const clone = outputElement.cloneNode(true);
         clone.style.padding = '20px';
-        clone.style.backgroundColor = '#ffffff';
+        clone.style.backgroundColor = 'transparent';
         clone.style.minHeight = 'auto';
         clone.style.maxWidth = '800px';
         clone.style.margin = '0';
         clone.style.position = 'relative';
+        clone.style.border = 'none !important';
+        clone.style.outline = 'none';
+        clone.style.boxShadow = 'none !important';
+        // Remove brutal styling classes
+        clone.classList.remove('brutal-typewriter');
         
         // Create temporary container
         const container = document.createElement('div');
         container.style.position = 'absolute';
         container.style.left = '-9999px';
         container.style.top = '0';
+        container.style.backgroundColor = 'transparent';
+        container.style.border = 'none';
         container.appendChild(clone);
         document.body.appendChild(container);
 
-        // Capture as image
+        // Capture as image with transparent background
         const canvas = await html2canvas(clone, {
-            backgroundColor: '#ffffff',
+            backgroundColor: null, // Transparent background
             scale: 1.5,
             useCORS: true,
             allowTaint: true,
-            height: clone.scrollHeight + 40,
-            width: clone.scrollWidth + 40
+            logging: false
         });
 
         // Clean up temporary element
