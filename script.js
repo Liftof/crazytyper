@@ -558,9 +558,20 @@ function exportToPDF() {
     }
     
     try {
-        // Create new jsPDF instance
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
+        // Create new jsPDF instance - handle different ways jsPDF might be exposed
+        let jsPDFClass = null;
+        
+        if (window.jspdf && window.jspdf.jsPDF) {
+            jsPDFClass = window.jspdf.jsPDF;
+        } else if (window.jsPDF) {
+            jsPDFClass = window.jsPDF;
+        } else if (typeof jsPDF !== 'undefined') {
+            jsPDFClass = jsPDF;
+        } else {
+            throw new Error('jsPDF library not found. Please refresh the page.');
+        }
+        
+        const doc = new jsPDFClass({
             orientation: 'portrait',
             unit: 'mm',
             format: 'a4'
@@ -631,8 +642,17 @@ function exportToPDF() {
         
     } catch (error) {
         console.error('Error generating PDF:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            jsPDFAvailable: {
+                'window.jspdf': typeof window.jspdf,
+                'window.jsPDF': typeof window.jsPDF,
+                'global jsPDF': typeof jsPDF
+            }
+        });
         showTemporaryMessage(pdfBtn, 'PDF Error');
-        alert('Error generating PDF. Please try again.');
+        alert('Error generating PDF: ' + error.message + '\nCheck console for details.');
     }
 }
 
