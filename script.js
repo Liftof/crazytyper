@@ -1011,7 +1011,14 @@ function getPdfConfig() {
 
 async function generateCustomPDF() {
     const config = getPdfConfig();
-    await exportToPDF(config);
-    closePdfConfigModal();
+    
+    try {
+        await exportToPDF(config);
+        // Only close modal after successful export
+        closePdfConfigModal();
+    } catch (error) {
+        console.error('PDF generation failed:', error);
+        // Keep modal open on error so user can retry
+    }
 }
 
